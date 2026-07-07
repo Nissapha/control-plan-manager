@@ -31,15 +31,17 @@ body{
 .mono{font-family:'IBM Plex Mono', monospace;}
 
 .topbar{ background:linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%); color:#fff; padding:18px 24px; position:sticky; top:0; z-index:30; box-shadow:0 4px 16px rgba(14,39,56,0.18); }
-.topbar-inner{ display:flex; align-items:center; justify-content:space-between; max-width:960px; margin:0 auto; flex-wrap:wrap; gap:12px; }
+.topbar-inner{ display:flex; align-items:center; justify-content:space-between; max-width:1280px; margin:0 auto; flex-wrap:wrap; gap:12px; }
 .brand-title{font-size:19px; font-weight:700; letter-spacing:-0.01em;}
 .brand-eyebrow{font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:0.14em; color:#9FC3D6; text-transform:uppercase;}
 .user-badge{font-size:13px; color:#C8DCE6; display:flex; align-items:center; gap:8px;}
 
-.page{max-width:960px; margin:0 auto; padding:24px 16px 80px;}
-.page-head{margin-bottom:16px;}
-.page-title{font-size:17px; font-weight:700; color:var(--navy);}
-.page-desc{font-size:13px; color:var(--ink-soft); margin-top:2px;}
+.page{max-width:1280px; margin:0 auto; padding:24px 20px 80px;}
+.page-desc{font-size:13px; color:var(--ink-soft); margin:2px 0 16px;}
+
+.tab-bar{display:flex; gap:8px; margin-bottom:18px;}
+.tab-btn{flex:1; background:#fff; padding:11px 16px;}
+.tab-btn.active{border:2px solid var(--navy); color:var(--navy); font-weight:700; background:var(--navy-soft);}
 
 .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px 24px; margin-bottom:16px;}
 .panel h2{font-size:15px; font-weight:700; margin:0 0 16px; color:var(--navy);}
@@ -65,9 +67,9 @@ input[type=text], input[type=number], input[type=date], select{
 
 .grid2{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;}
 .grid3{display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; margin-bottom:12px;}
-.row-between{display:flex; justify-content:space-between; align-items:center;}
+.row-between{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 
-.badge{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:20px; white-space:nowrap; cursor:pointer; border:1px solid transparent; }
+.badge{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:20px; white-space:nowrap; border:1px solid transparent; }
 .badge::before{content:''; width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0;}
 .badge-slate{background:var(--slate-soft); color:#5C6B79;}
 .badge-amber{background:var(--amber-soft); color:#A85F22;}
@@ -79,37 +81,39 @@ input[type=text], input[type=number], input[type=date], select{
 .process-name{font-size:15px; font-weight:700; color:var(--navy);}
 .process-tools{font-size:12px; color:var(--ink-faint); margin-top:2px;}
 .process-badges{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
-.expand-area{margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft);}
+.expand-area{margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft); overflow-x:auto;}
 .expand-area h4{font-size:11.5px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.04em; margin:0 0 6px;}
 .expand-area h4:not(:first-child){margin-top:14px;}
-
-.list-item{padding:10px 0; border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; align-items:center; gap:12px;}
-.list-item:last-child{border-bottom:none;}
-.list-item .meta{font-size:12px; color:var(--ink-faint); margin-top:2px;}
-.list-item .actions{display:flex; gap:6px; flex-shrink:0;}
 
 .tool-row, .card-block{border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:10px; position:relative;}
 .tool-row{display:flex; gap:8px; align-items:center;}
 .tool-row input{flex:1;}
 .card-block-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
 .card-block-head span{font-size:13px; font-weight:700; color:var(--navy);}
-.card-block.editing{border-color:var(--navy); background:var(--navy-soft);}
 
+table.data-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+table.data-table th, table.data-table td{border:1px solid var(--line); padding:7px 9px; text-align:left; vertical-align:top;}
+table.data-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; white-space:nowrap; position:sticky; top:0;}
+table.data-table td.actions-cell{white-space:nowrap;}
 table.mini-table{width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:4px;}
 table.mini-table th, table.mini-table td{border:1px solid var(--line); padding:5px 7px; text-align:left;}
 table.mini-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
+.table-scroll{overflow-x:auto;}
 
 .hidden{display:none !important;}
 .empty-state{ text-align:center; padding:40px 24px; color:var(--ink-soft); border:1.5px dashed var(--line); border-radius:var(--radius); }
-.empty-state .es-title{font-weight:700; color:var(--navy); font-size:14px; margin-bottom:4px;}
 a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:none; font-weight:600;}
 .note{font-size:12px; color:#A85F22; background:var(--amber-soft); border-radius:8px; padding:8px 12px; margin:0 0 12px;}
-.history-panel{background:#FAFCFD; border:1px solid var(--line-soft); border-radius:8px; padding:8px 12px; margin:6px 0 10px;}
-.log-item{font-size:12px; color:var(--ink-soft); padding:6px 0; border-bottom:1px solid var(--line-soft);}
-.log-item:last-child{border-bottom:none;}
-.log-item b{color:var(--ink);}
 .export-picker-row{display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--line-soft);}
 .export-picker-row:last-child{border-bottom:none;}
+
+.log-item{font-size:12px; color:var(--ink-soft); padding:8px 0; border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; gap:8px;}
+.log-item:last-child{border-bottom:none;}
+.log-item b{color:var(--ink);}
+.log-item ul{margin:4px 0 0; padding-left:18px;}
+
+#modal-overlay{position:fixed; inset:0; background:rgba(14,39,56,0.5); z-index:100; overflow-y:auto; padding:5vh 16px;}
+#modal-box{max-width:680px; margin:0 auto;}
 </style>
 </head>
 <body>
@@ -129,31 +133,40 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
 
 <div class="page">
 
-  <!-- ===== HOME: PROCESS OVERVIEW ===== -->
-  <div id="view-home">
-    <div class="page-head">
-      <div class="page-title">Process Overview</div>
-      <div class="page-desc">รายการ Process กลางของโรงงาน ใช้ร่วมกันได้ทุกสินค้า &mdash; ทำ FMEA และ Control Plan จาก Process เดียวกันนี้</div>
-    </div>
+  <div class="tab-bar">
+    <button class="btn tab-btn active" id="tab-btn-overview" onclick="switchTab('overview')">Process Overview</button>
+    <button class="btn tab-btn" id="tab-btn-fmea" onclick="switchTab('fmea')">FMEA</button>
+    <button class="btn tab-btn" id="tab-btn-cp" onclick="switchTab('cp')">Control Plan</button>
+  </div>
 
-    <div class="panel">
-      <h2>เพิ่ม Process</h2>
-      <div class="grid3">
-        <div><label>Process No.</label><input type="text" id="po-processno" placeholder="เช่น 10"></div>
-        <div style="grid-column:span 2;"><label>Process name</label><input type="text" id="po-processname" placeholder="เช่น ปั๊มโลหะ"></div>
+  <!-- ===== TAB: PROCESS OVERVIEW ===== -->
+  <div id="tab-overview">
+    <div class="row-between">
+      <div>
+        <div style="font-size:17px; font-weight:700; color:var(--navy);">Process Overview</div>
+        <div class="page-desc" style="margin:2px 0 0;">รายการ Process กลางของโรงงาน ใช้ร่วมกันได้ทุกสินค้า</div>
       </div>
-      <h3>M/C, JIG, Tool ที่ใช้</h3>
-      <div id="po-tool-rows"></div>
-      <button class="btn btn-sm btn-ghost" onclick="addTool()">+ เพิ่มเครื่องมือ</button>
-      <div style="text-align:right; margin-top:12px;">
-        <button class="btn btn-primary" onclick="savePoProcess()">บันทึก Process นี้</button>
-      </div>
+      <button class="btn btn-primary" onclick="openProcessModal()">+ สร้าง Process ใหม่</button>
     </div>
+    <div id="process-list"><p class="empty-state">ยังไม่มี Process &mdash; กด "+ สร้าง Process ใหม่"</p></div>
+  </div>
 
+  <!-- ===== TAB: FMEA ===== -->
+  <div id="tab-fmea" class="hidden">
+    <div class="note">ช่อง AP (Action Priority) ให้เลือกเองก่อน (H/M/L) รอตาราง AIAG-VDA ที่ยืนยันแล้วมาเชื่อมคำนวณอัตโนมัติทีหลัง</div>
+    <div class="row-between">
+      <div style="font-size:17px; font-weight:700; color:var(--navy);">FMEA ทั้งหมด</div>
+      <button class="btn btn-primary" onclick="openFmeaModal()">+ สร้าง Failure Mode ใหม่</button>
+    </div>
+    <div class="table-scroll" id="fmea-table-wrap"><p class="empty-state">ยังไม่มี Failure Mode</p></div>
+  </div>
+
+  <!-- ===== TAB: CONTROL PLAN ===== -->
+  <div id="tab-cp" class="hidden">
     <div class="panel">
-      <div class="row-between">
+      <div class="row-between" style="margin-bottom:0;">
         <h2 style="margin:0;">Export Control Plan สำหรับสินค้า</h2>
-        <button class="btn btn-ghost btn-sm" onclick="toggleExportPicker()" id="export-toggle-btn">เลือก Process เพื่อ Export</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleExportPicker()">เลือก Process เพื่อ Export</button>
       </div>
       <div id="export-picker" class="hidden" style="margin-top:12px;">
         <div class="grid3">
@@ -163,99 +176,21 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
         </div>
         <h3>ติ๊กเลือก Process ที่ใช้กับสินค้านี้</h3>
         <div id="export-process-checklist"></div>
-        <div style="text-align:right; margin-top:12px;">
-          <button class="btn btn-primary" onclick="exportCombined()">Export เป็น Excel</button>
-        </div>
+        <div style="text-align:right; margin-top:12px;"><button class="btn btn-primary" onclick="exportCombined()">Export เป็น Excel</button></div>
       </div>
     </div>
-
-    <div class="panel">
-      <h2>Process ทั้งหมด</h2>
-      <div id="process-list"><p class="empty-state">ยังไม่มี Process &mdash; เพิ่มจากฟอร์มด้านบน</p></div>
+    <div class="row-between">
+      <div style="font-size:17px; font-weight:700; color:var(--navy);">Control Plan ทั้งหมด</div>
+      <button class="btn btn-primary" onclick="openCharModal()">+ สร้าง Characteristic ใหม่</button>
     </div>
+    <div class="table-scroll" id="cp-table-wrap"><p class="empty-state">ยังไม่มี Characteristic</p></div>
   </div>
 
-  <!-- ===== SUB-VIEW: FMEA ===== -->
-  <div id="view-fmea" class="hidden">
-    <a class="back-link" onclick="goHome()">&larr; กลับไปหน้า Process Overview</a>
-    <div class="panel" style="margin-top:12px;">
-      <p style="font-weight:700; font-size:16px; margin:0; color:var(--navy);" id="fmea-process-title">-</p>
-      <p style="font-size:12px; color:var(--ink-faint); margin:4px 0 0;" id="fmea-process-tools">-</p>
-    </div>
-    <div class="note">ช่อง AP (Action Priority) ให้เลือกเองก่อน (H/M/L) รอตาราง AIAG-VDA ที่ยืนยันแล้วมาเชื่อมคำนวณอัตโนมัติทีหลัง</div>
-    <div class="panel">
-      <h2 id="fm-form-title">เพิ่ม Potential Failure Mode</h2>
-      <h3>ความล้มเหลวและผลกระทบ</h3>
-      <div class="grid2">
-        <div><label>Potential Failure Mode</label><input type="text" id="fm-failuremode" placeholder="เช่น รอยเชื่อมไม่แน่น"></div>
-        <div><label>Potential Effect(s)</label><input type="text" id="fm-effect" placeholder="เช่น สารทำความเย็นรั่ว"></div>
-      </div>
-      <div class="grid3"><div><label>Severity (S) 1-10</label><input type="number" id="fm-severity" min="1" max="10"></div></div>
-      <h3>สาเหตุ</h3>
-      <div class="grid2">
-        <div><label>Potential Cause(s)</label><input type="text" id="fm-cause" placeholder="เช่น กระแสเชื่อมต่ำเกินไป"></div>
-        <div><label>Occurrence (O) 1-10</label><input type="number" id="fm-occurrence" min="1" max="10"></div>
-      </div>
-      <h3>การควบคุมปัจจุบัน</h3>
-      <div class="grid2">
-        <div><label>Current Prevention Control</label><input type="text" id="fm-prevention" placeholder="เช่น WI กำหนดกระแสเชื่อมมาตรฐาน"></div>
-        <div><label>Current Detection Control</label><input type="text" id="fm-detectioncontrol" placeholder="เช่น Helium Leak Test 100%"></div>
-      </div>
-      <div class="grid3">
-        <div><label>Detection (D) 1-10</label><input type="number" id="fm-detection" min="1" max="10"></div>
-        <div><label>Action Priority (AP)</label><select id="fm-ap"><option value="H">H (สูง)</option><option value="M">M (กลาง)</option><option value="L">L (ต่ำ)</option></select></div>
-      </div>
-      <h3>มาตรการและติดตาม</h3>
-      <div class="grid2">
-        <div><label>Recommended Action</label><input type="text" id="fm-recommendedaction" placeholder="เช่น เพิ่มการสุ่มตรวจกระแสเชื่อม"></div>
-        <div><label>Responsible</label><input type="text" id="fm-responsible" placeholder="เช่น หัวหน้าไลน์เชื่อม"></div>
-      </div>
-      <div class="grid2">
-        <div><label>Target date</label><input type="date" id="fm-targetdate"></div>
-        <div><label>Status</label><select id="fm-status"><option value="open">Open</option><option value="inprogress">In progress</option><option value="closed">Closed</option></select></div>
-      </div>
-      <div class="row-between">
-        <a class="back-link hidden" id="fm-cancel-edit" onclick="cancelFmEdit()">ยกเลิกการแก้ไข</a>
-        <button class="btn btn-primary" id="fm-save-btn" onclick="saveFailureMode()" style="margin-left:auto;">บันทึก Failure Mode นี้</button>
-      </div>
-    </div>
-    <div class="panel">
-      <h2>Failure Mode ที่บันทึกไว้</h2>
-      <div id="fmea-list"><p class="empty-state">ยังไม่มี Failure Mode</p></div>
-    </div>
-  </div>
+</div>
 
-  <!-- ===== SUB-VIEW: CONTROL PLAN ===== -->
-  <div id="view-cp" class="hidden">
-    <a class="back-link" onclick="goHome()">&larr; กลับไปหน้า Process Overview</a>
-    <div class="panel" style="margin-top:12px;">
-      <p style="font-weight:700; font-size:16px; margin:0; color:var(--navy);" id="cp-process-title">-</p>
-      <p style="font-size:12px; color:var(--ink-faint); margin:4px 0 0;" id="cp-process-tools">-</p>
-    </div>
-
-    <div class="panel">
-      <h2>เพิ่ม Characteristic</h2>
-      <div id="cp-char-cards"></div>
-      <button class="btn btn-sm btn-ghost" onclick="addCharCard()">+ เพิ่ม Characteristic</button>
-      <div style="text-align:right; margin-top:12px;">
-        <button class="btn btn-primary" onclick="saveCharacteristics()">บันทึก Characteristic ทั้งหมดนี้</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2 id="cp-list-title">Characteristic ที่บันทึกไว้</h2>
-      <div id="cp-list"><p class="empty-state">ยังไม่มี Characteristic</p></div>
-    </div>
-
-    <div class="panel">
-      <h2>Export Process นี้เป็น Excel</h2>
-      <div class="grid2">
-        <div><label>Part No. (สำหรับชื่อไฟล์)</label><input type="text" id="cp-export-partno" placeholder="เช่น MFC-96B-A"></div>
-      </div>
-      <div style="text-align:right;"><button class="btn btn-ghost" onclick="exportSingleProcess()">Export เป็น Excel</button></div>
-    </div>
-  </div>
-
+<!-- ===== MODAL ===== -->
+<div id="modal-overlay" class="hidden" onclick="if(event.target===this) closeModal()">
+  <div id="modal-box" class="panel"><div id="modal-content"></div></div>
 </div>
 
 <script type="module">
@@ -278,8 +213,8 @@ function uid() { return Math.random().toString(36).slice(2, 10); }
 function escapeHtml(str) { return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function formatTime(ts) { if (!ts) return '-'; const d = new Date(ts); return d.toLocaleDateString('th-TH') + ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}); }
 function whoWhen(o) { return o.updatedBy ? ('แก้ไขล่าสุดโดย ' + escapeHtml(o.updatedBy) + ' \u00b7 ' + formatTime(o.updatedAt)) : ('กรอกโดย ' + escapeHtml(o.enteredBy) + ' \u00b7 ' + formatTime(o.enteredAt)); }
+function activityTime(o) { return o.updatedAt || o.enteredAt || 0; }
 
-// ---------- User identity ----------
 let userName = localStorage.getItem('cpUserName') || '';
 function promptUserName(force) {
   if (force || !userName) {
@@ -292,55 +227,14 @@ promptUserName(false);
 
 // ---------- Global state ----------
 let allProcesses = {};
-let currentProcessId = null;
+let currentTab = 'overview';
 let expandedProcesses = {};
-let editingFmId = null;
-let editingCharId = null;
-let expandedFmLog = {};
-let expandedCharLog = {};
-
-const FM_LABELS = {
-  failureMode:'Potential Failure Mode', effect:'Potential Effect(s)', severity:'Severity (S)',
-  cause:'Potential Cause(s)', occurrence:'Occurrence (O)', prevention:'Current Prevention Control',
-  detectionControl:'Current Detection Control', detection:'Detection (D)', ap:'Action Priority (AP)',
-  recommendedAction:'Recommended Action', responsible:'Responsible', targetDate:'Target date', status:'Status'
-};
-const CHAR_LABELS = {
-  charNo:'Characteristic No.', productChar:'Product characteristic', processChar:'Process characteristic',
-  spec:'Spec / Tolerance', document:'Document', evaluation:'Evaluation', sampleSize:'จำนวน',
-  frequency:'ความถี่', qualityRecord:'บันทึกคุณภาพ', owner:'Owner', reaction:'Reaction'
-};
-function diffFields(oldObj, newObj, labels) {
-  const changes = [];
-  Object.keys(labels).forEach(key => {
-    const oldVal = (oldObj?.[key] ?? '').toString();
-    const newVal = (newObj?.[key] ?? '').toString();
-    if (oldVal !== newVal) changes.push({ field: labels[key], oldVal, newVal });
-  });
-  return changes;
-}
-function pushLog(path, entry) { const logRef = push(ref(db, path)); set(logRef, entry); }
-function renderLogEntries(logObj) {
-  const ids = Object.keys(logObj || {});
-  if (!ids.length) return '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มีประวัติ</p>';
-  ids.sort((a,b) => (logObj[b].at||0) - (logObj[a].at||0));
-  return ids.map(id => {
-    const l = logObj[id];
-    const actionLabel = l.action === 'created' ? 'สร้างรายการ' : 'แก้ไข';
-    let changesHtml = '';
-    if (l.changes && l.changes.length) {
-      changesHtml = '<ul style="margin:4px 0 0; padding-left:18px;">' + l.changes.map(c => `<li>${escapeHtml(c.field)}: "${escapeHtml(c.oldVal)}" &rarr; "${escapeHtml(c.newVal)}"</li>`).join('') + '</ul>';
-    }
-    return `<div class="log-item"><b>${actionLabel}</b> โดย ${escapeHtml(l.by)} \u00b7 ${formatTime(l.at)}${changesHtml}</div>`;
-  }).join('');
-}
-function toggleFmLog(id) { expandedFmLog[id] = !expandedFmLog[id]; renderFmeaView(); }
-function toggleCharLog(id) { expandedCharLog[id] = !expandedCharLog[id]; renderCpView(); }
 
 onValue(ref(db, 'processes'), snap => {
   allProcesses = snap.val() || {};
   renderProcessList();
-  if (currentProcessId) { renderFmeaView(); renderCpView(); }
+  renderFmeaTable();
+  renderCpTable();
 });
 
 function sortedProcessIds() {
@@ -348,74 +242,78 @@ function sortedProcessIds() {
   ids.sort((a,b) => parseFloat(allProcesses[a].processNo) - parseFloat(allProcesses[b].processNo));
   return ids;
 }
+function processLabel(pid) { const p = allProcesses[pid]; return p ? (p.processNo + ' \u00b7 ' + p.processName) : '(ถูกลบไปแล้ว)'; }
 
-// ---------- Navigation ----------
-function goHome() {
-  currentProcessId = null;
-  document.getElementById('view-fmea').classList.add('hidden');
-  document.getElementById('view-cp').classList.add('hidden');
-  document.getElementById('view-home').classList.remove('hidden');
-}
-function openFmea(pid) {
-  currentProcessId = pid;
-  document.getElementById('view-home').classList.add('hidden');
-  document.getElementById('view-cp').classList.add('hidden');
-  document.getElementById('view-fmea').classList.remove('hidden');
-  cancelFmEdit();
-  renderFmeaView();
-}
-function openCp(pid) {
-  currentProcessId = pid;
-  document.getElementById('view-home').classList.add('hidden');
-  document.getElementById('view-fmea').classList.add('hidden');
-  document.getElementById('view-cp').classList.remove('hidden');
-  editingCharId = null;
-  resetCpForm();
-  renderCpView();
+function switchTab(tab) {
+  currentTab = tab;
+  ['overview','fmea','cp'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
+    document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
+  });
 }
 
-// ---------- Process Overview: add process ----------
-let poTools = [];
-function resetPoForm() {
-  poTools = [{ key: uid(), value: '' }];
-  document.getElementById('po-processno').value = '';
-  document.getElementById('po-processname').value = '';
-  renderPoToolRows();
+// ---------- Generic modal ----------
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); document.getElementById('modal-content').innerHTML = ''; }
+function showModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal-overlay').classList.remove('hidden'); }
+function processOptionsHtml(selectedId) {
+  return sortedProcessIds().map(id => `<option value="${id}" ${id===selectedId?'selected':''}>${escapeHtml(processLabel(id))}</option>`).join('');
 }
-function renderPoToolRows() {
-  document.getElementById('po-tool-rows').innerHTML = poTools.map(t => `
+
+// ================= PROCESS OVERVIEW =================
+let modalPoTools = [];
+function openProcessModal(pid) {
+  const p = pid ? allProcesses[pid] : null;
+  modalPoTools = p ? Object.entries(p.tools || {}).map(([k,v]) => ({key:k, value:v})) : [{key:uid(), value:''}];
+  if (!modalPoTools.length) modalPoTools = [{key:uid(), value:''}];
+  showModal(`
+    <h2>${p ? 'แก้ไข Process' : 'สร้าง Process ใหม่'}</h2>
+    <div class="grid3">
+      <div><label>Process No.</label><input type="text" id="mpo-processno" value="${p?escapeHtml(p.processNo):''}" placeholder="เช่น 10"></div>
+      <div style="grid-column:span 2;"><label>Process name</label><input type="text" id="mpo-processname" value="${p?escapeHtml(p.processName):''}" placeholder="เช่น ปั๊มโลหะ"></div>
+    </div>
+    <h3>M/C, JIG, Tool ที่ใช้</h3>
+    <div id="mpo-tool-rows"></div>
+    <button class="btn btn-sm btn-ghost" onclick="addModalTool()">+ เพิ่มเครื่องมือ</button>
+    <div class="row-between" style="margin-top:16px; margin-bottom:0;">
+      <a class="back-link" onclick="closeModal()">ยกเลิก</a>
+      <button class="btn btn-primary" onclick="saveProcessModal('${pid||''}')">${p?'บันทึกการแก้ไข':'สร้าง Process'}</button>
+    </div>
+  `);
+  renderModalToolRows();
+}
+function renderModalToolRows() {
+  document.getElementById('mpo-tool-rows').innerHTML = modalPoTools.map(t => `
     <div class="tool-row">
-      <input type="text" placeholder="เช่น Helium detector" value="${escapeHtml(t.value)}" oninput="updatePoTool('${t.key}', this.value)">
-      ${poTools.length > 1 ? `<button class="btn btn-sm btn-danger" onclick="removePoTool('${t.key}')">ลบ</button>` : ''}
+      <input type="text" placeholder="เช่น Helium detector" value="${escapeHtml(t.value)}" oninput="updateModalTool('${t.key}', this.value)">
+      ${modalPoTools.length > 1 ? `<button class="btn btn-sm btn-danger" onclick="removeModalTool('${t.key}')">ลบ</button>` : ''}
     </div>`).join('');
 }
-function addTool() { poTools.push({ key: uid(), value: '' }); renderPoToolRows(); }
-function removePoTool(key) { poTools = poTools.filter(t => t.key !== key); renderPoToolRows(); }
-function updatePoTool(key, val) { const t = poTools.find(t => t.key === key); if (t) t.value = val; }
-resetPoForm();
-
-function savePoProcess() {
-  const processNo = document.getElementById('po-processno').value.trim();
-  const processName = document.getElementById('po-processname').value.trim();
+function addModalTool() { modalPoTools.push({key:uid(), value:''}); renderModalToolRows(); }
+function removeModalTool(key) { modalPoTools = modalPoTools.filter(t => t.key !== key); renderModalToolRows(); }
+function updateModalTool(key, val) { const t = modalPoTools.find(t => t.key === key); if (t) t.value = val; }
+function saveProcessModal(pid) {
+  const processNo = document.getElementById('mpo-processno').value.trim();
+  const processName = document.getElementById('mpo-processname').value.trim();
   if (!processNo || !processName) { alert('กรอก Process No. และ Process name ก่อนนะครับ'); return; }
   promptUserName(false);
   const toolsObj = {};
-  poTools.forEach(t => { if (t.value.trim()) toolsObj[t.key] = t.value.trim(); });
-  const newRef = push(ref(db, 'processes'));
-  set(newRef, { processNo, processName, tools: toolsObj, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() })
-    .then(() => resetPoForm());
+  modalPoTools.forEach(t => { if (t.value.trim()) toolsObj[t.key] = t.value.trim(); });
+  if (pid) {
+    update(ref(db, 'processes/' + pid), { processNo, processName, tools: toolsObj }).then(closeModal);
+  } else {
+    const newRef = push(ref(db, 'processes'));
+    set(newRef, { processNo, processName, tools: toolsObj, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(closeModal);
+  }
 }
 function deleteProcess(pid) {
   if (!confirm('ลบ Process นี้พร้อม FMEA และ Control Plan ทั้งหมดที่อยู่ในนั้นเลยหรือไม่? ย้อนกลับไม่ได้')) return;
   remove(ref(db, 'processes/' + pid));
 }
-
-// ---------- Process Overview: list + expand ----------
 function toggleExpand(pid) { expandedProcesses[pid] = !expandedProcesses[pid]; renderProcessList(); }
 function renderProcessList() {
   const ids = sortedProcessIds();
   const el = document.getElementById('process-list');
-  if (!ids.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Process &mdash; เพิ่มจากฟอร์มด้านบน</p>'; return; }
+  if (!ids.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Process &mdash; กด "+ สร้าง Process ใหม่"</p>'; return; }
   el.innerHTML = ids.map(id => {
     const p = allProcesses[id];
     const fmCount = Object.keys(p.fmea || {}).length;
@@ -425,13 +323,10 @@ function renderProcessList() {
     let expandHtml = '';
     if (expanded) {
       const fms = Object.values(p.fmea || {});
-      const fmTable = fms.length ? `<table class="mini-table"><tr><th>Failure Mode</th><th>Effect</th><th>S</th><th>O</th><th>D</th><th>AP</th></tr>${fms.map(f => `<tr><td>${escapeHtml(f.failureMode)}</td><td>${escapeHtml(f.effect)}</td><td>${escapeHtml(f.severity)}</td><td>${escapeHtml(f.occurrence)}</td><td>${escapeHtml(f.detection)}</td><td>${escapeHtml(f.ap)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Mode</p>';
+      const fmTable = fms.length ? `<table class="mini-table"><tr><th>Failure Mode</th><th>Effect</th><th>S</th><th>Cause</th><th>O</th><th>Prevention</th><th>Detection Control</th><th>D</th><th>AP</th><th>Recommended Action</th><th>Responsible</th><th>Target date</th><th>Status</th></tr>${fms.map(f => `<tr><td>${escapeHtml(f.failureMode)}</td><td>${escapeHtml(f.effect)}</td><td>${escapeHtml(f.severity)}</td><td>${escapeHtml(f.cause)}</td><td>${escapeHtml(f.occurrence)}</td><td>${escapeHtml(f.prevention)}</td><td>${escapeHtml(f.detectionControl)}</td><td>${escapeHtml(f.detection)}</td><td>${escapeHtml(f.ap)}</td><td>${escapeHtml(f.recommendedAction)}</td><td>${escapeHtml(f.responsible)}</td><td>${escapeHtml(f.targetDate)}</td><td>${escapeHtml(f.status)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Mode</p>';
       const chars = Object.values(p.controlPlan?.chars || {}).sort((a,b) => parseFloat(a.charNo||0) - parseFloat(b.charNo||0));
-      const chTable = chars.length ? `<table class="mini-table"><tr><th>No.</th><th>Product char.</th><th>Process char.</th><th>Spec</th><th>Owner</th></tr>${chars.map(c => `<tr><td>${escapeHtml(c.charNo)}</td><td>${escapeHtml(c.productChar)}</td><td>${escapeHtml(c.processChar)}</td><td>${escapeHtml(c.spec)}</td><td>${escapeHtml(c.owner)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Characteristic</p>';
-      expandHtml = `<div class="expand-area">
-        <h4>FMEA</h4>${fmTable}
-        <h4>Control Plan</h4>${chTable}
-      </div>`;
+      const chTable = chars.length ? `<table class="mini-table"><tr><th>No.</th><th>Product char.</th><th>Process char.</th><th>Spec</th><th>Document</th><th>Evaluation</th><th>จำนวน</th><th>ความถี่</th><th>บันทึกคุณภาพ</th><th>Owner</th><th>Reaction</th></tr>${chars.map(c => `<tr><td>${escapeHtml(c.charNo)}</td><td>${escapeHtml(c.productChar)}</td><td>${escapeHtml(c.processChar)}</td><td>${escapeHtml(c.spec)}</td><td>${escapeHtml(c.document)}</td><td>${escapeHtml(c.evaluation)}</td><td>${escapeHtml(c.sampleSize)}</td><td>${escapeHtml(c.frequency)}</td><td>${escapeHtml(c.qualityRecord)}</td><td>${escapeHtml(c.owner)}</td><td>${escapeHtml(c.reaction)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Characteristic</p>';
+      expandHtml = `<div class="expand-area"><h4>FMEA</h4>${fmTable}<h4>Control Plan</h4>${chTable}</div>`;
     }
     return `<div class="panel process-card">
       <div class="process-card-top">
@@ -441,244 +336,322 @@ function renderProcessList() {
         </div>
         <div style="display:flex; gap:6px;">
           <button class="btn btn-icon" onclick="toggleExpand('${id}')" title="แสดง/ซ่อนรายละเอียด">${expanded ? '\u25B2' : '\u25BC'}</button>
-          <button class="btn btn-icon btn-danger" onclick="deleteProcess('${id}')" title="ลบ Process">&times;</button>
+          <button class="btn btn-icon" onclick="openProcessModal('${id}')" title="แก้ไข">&#9998;</button>
+          <button class="btn btn-icon btn-danger" onclick="deleteProcess('${id}')" title="ลบ">&times;</button>
         </div>
       </div>
       <div class="process-badges">
-        <span class="badge ${fmCount ? 'badge-teal' : 'badge-slate'}" onclick="openFmea('${id}')">FMEA (${fmCount}) &rarr;</span>
-        <span class="badge ${chCount ? 'badge-teal' : 'badge-slate'}" onclick="openCp('${id}')">Control Plan (${chCount}) &rarr;</span>
+        <span class="badge ${fmCount ? 'badge-teal' : 'badge-slate'}">FMEA (${fmCount})</span>
+        <span class="badge ${chCount ? 'badge-teal' : 'badge-slate'}">Control Plan (${chCount})</span>
       </div>
       ${expandHtml}
     </div>`;
   }).join('');
 }
 
-// ---------- FMEA sub-view (add + edit reuse same form) ----------
-function resetFmForm() {
-  ['fm-failuremode','fm-effect','fm-severity','fm-cause','fm-occurrence','fm-prevention','fm-detectioncontrol','fm-detection','fm-recommendedaction','fm-responsible','fm-targetdate'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('fm-ap').value = 'H';
-  document.getElementById('fm-status').value = 'open';
+// ================= HISTORY (shared, shown via modal) =================
+function pushLog(path, entry) { const logRef = push(ref(db, path)); set(logRef, entry); }
+function diffFields(oldObj, newObj, labels) {
+  const changes = [];
+  Object.keys(labels).forEach(key => {
+    const oldVal = (oldObj?.[key] ?? '').toString();
+    const newVal = (newObj?.[key] ?? '').toString();
+    if (oldVal !== newVal) changes.push({ field: labels[key], oldVal, newVal });
+  });
+  return changes;
 }
-function cancelFmEdit() {
-  editingFmId = null;
-  resetFmForm();
-  document.getElementById('fm-form-title').textContent = 'เพิ่ม Potential Failure Mode';
-  document.getElementById('fm-save-btn').textContent = 'บันทึก Failure Mode นี้';
-  document.getElementById('fm-cancel-edit').classList.add('hidden');
+function openHistoryModal(basePath, title) {
+  const node = getByPath(basePath + '/log');
+  const ids = Object.keys(node || {});
+  ids.sort((a,b) => (node[b].at||0) - (node[a].at||0));
+  const rows = ids.length ? ids.map(id => {
+    const l = node[id];
+    const actionLabel = l.action === 'created' ? 'สร้างรายการ' : 'แก้ไข';
+    const changesHtml = (l.changes && l.changes.length) ? '<ul>' + l.changes.map(c => `<li>${escapeHtml(c.field)}: "${escapeHtml(c.oldVal)}" &rarr; "${escapeHtml(c.newVal)}"</li>`).join('') + '</ul>' : '';
+    return `<div class="log-item"><div><b>${actionLabel}</b> โดย ${escapeHtml(l.by)} \u00b7 ${formatTime(l.at)}${changesHtml}</div>
+      <button class="btn btn-icon btn-danger btn-sm" onclick="deleteLogEntry('${basePath}/log/${id}')" title="ลบรายการประวัตินี้">&times;</button></div>`;
+  }).join('') : '<p class="empty-state">ยังไม่มีประวัติ</p>';
+  showModal(`<h2>ประวัติ &middot; ${escapeHtml(title)}</h2>${rows}<div style="text-align:right; margin-top:12px;"><button class="btn btn-ghost" onclick="closeModal()">ปิด</button></div>`);
 }
-function editFailureMode(fmId) {
-  const f = allProcesses[currentProcessId].fmea[fmId];
-  editingFmId = fmId;
-  document.getElementById('fm-failuremode').value = f.failureMode || '';
-  document.getElementById('fm-effect').value = f.effect || '';
-  document.getElementById('fm-severity').value = f.severity || '';
-  document.getElementById('fm-cause').value = f.cause || '';
-  document.getElementById('fm-occurrence').value = f.occurrence || '';
-  document.getElementById('fm-prevention').value = f.prevention || '';
-  document.getElementById('fm-detectioncontrol').value = f.detectionControl || '';
-  document.getElementById('fm-detection').value = f.detection || '';
-  document.getElementById('fm-ap').value = f.ap || 'H';
-  document.getElementById('fm-recommendedaction').value = f.recommendedAction || '';
-  document.getElementById('fm-responsible').value = f.responsible || '';
-  document.getElementById('fm-targetdate').value = f.targetDate || '';
-  document.getElementById('fm-status').value = f.status || 'open';
-  document.getElementById('fm-form-title').textContent = 'แก้ไข Potential Failure Mode';
-  document.getElementById('fm-save-btn').textContent = 'บันทึกการแก้ไข';
-  document.getElementById('fm-cancel-edit').classList.remove('hidden');
-  document.getElementById('fm-form-title').scrollIntoView({behavior:'smooth', block:'start'});
+function deleteLogEntry(path) {
+  if (!confirm('ลบรายการประวัตินี้หรือไม่?')) return;
+  remove(ref(db, path)).then(closeModal);
 }
-function deleteFailureMode(fmId) {
-  if (!confirm('ลบ Failure Mode นี้หรือไม่?')) return;
-  remove(ref(db, 'processes/' + currentProcessId + '/fmea/' + fmId));
-  if (editingFmId === fmId) cancelFmEdit();
+function getByPath(path) {
+  return path.split('/').reduce((obj, key) => (obj ? obj[key] : undefined), allProcesses ? {processes: allProcesses} : {});
 }
-function saveFailureMode() {
-  const failureMode = document.getElementById('fm-failuremode').value.trim();
+
+// ================= FMEA (global tab) =================
+const FM_LABELS = {
+  failureMode:'Potential Failure Mode', effect:'Potential Effect(s)', severity:'Severity (S)',
+  cause:'Potential Cause(s)', occurrence:'Occurrence (O)', prevention:'Current Prevention Control',
+  detectionControl:'Current Detection Control', detection:'Detection (D)', ap:'Action Priority (AP)',
+  recommendedAction:'Recommended Action', responsible:'Responsible', targetDate:'Target date', status:'Status'
+};
+function flattenFmea() {
+  const rows = [];
+  Object.keys(allProcesses).forEach(pid => {
+    Object.entries(allProcesses[pid].fmea || {}).forEach(([fmId, f]) => rows.push({ pid, fmId, ...f }));
+  });
+  rows.sort((a,b) => activityTime(b) - activityTime(a));
+  return rows;
+}
+function openFmeaModal(pid, fmId) {
+  const f = (pid && fmId) ? allProcesses[pid].fmea[fmId] : null;
+  const isEdit = !!f;
+  showModal(`
+    <h2>${isEdit ? 'แก้ไข Potential Failure Mode' : 'สร้าง Potential Failure Mode ใหม่'}</h2>
+    ${isEdit ? `<p style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">Process: <b>${escapeHtml(processLabel(pid))}</b></p>`
+              : `<div style="margin-bottom:12px;"><label>เลือก Process</label><select id="mfm-process">${processOptionsHtml(pid)}</select></div>`}
+    <h3>ความล้มเหลวและผลกระทบ</h3>
+    <div class="grid2">
+      <div><label>Potential Failure Mode</label><input type="text" id="mfm-failuremode" value="${f?escapeHtml(f.failureMode):''}"></div>
+      <div><label>Potential Effect(s)</label><input type="text" id="mfm-effect" value="${f?escapeHtml(f.effect):''}"></div>
+    </div>
+    <div class="grid3"><div><label>Severity (S) 1-10</label><input type="number" id="mfm-severity" min="1" max="10" value="${f?escapeHtml(f.severity):''}"></div></div>
+    <h3>สาเหตุ</h3>
+    <div class="grid2">
+      <div><label>Potential Cause(s)</label><input type="text" id="mfm-cause" value="${f?escapeHtml(f.cause):''}"></div>
+      <div><label>Occurrence (O) 1-10</label><input type="number" id="mfm-occurrence" min="1" max="10" value="${f?escapeHtml(f.occurrence):''}"></div>
+    </div>
+    <h3>การควบคุมปัจจุบัน</h3>
+    <div class="grid2">
+      <div><label>Current Prevention Control</label><input type="text" id="mfm-prevention" value="${f?escapeHtml(f.prevention):''}"></div>
+      <div><label>Current Detection Control</label><input type="text" id="mfm-detectioncontrol" value="${f?escapeHtml(f.detectionControl):''}"></div>
+    </div>
+    <div class="grid3">
+      <div><label>Detection (D) 1-10</label><input type="number" id="mfm-detection" min="1" max="10" value="${f?escapeHtml(f.detection):''}"></div>
+      <div><label>Action Priority (AP)</label><select id="mfm-ap">
+        <option value="H" ${f?.ap==='H'?'selected':''}>H (สูง)</option>
+        <option value="M" ${f?.ap==='M'?'selected':''}>M (กลาง)</option>
+        <option value="L" ${f?.ap==='L'?'selected':''}>L (ต่ำ)</option></select></div>
+    </div>
+    <h3>มาตรการและติดตาม</h3>
+    <div class="grid2">
+      <div><label>Recommended Action</label><input type="text" id="mfm-recommendedaction" value="${f?escapeHtml(f.recommendedAction):''}"></div>
+      <div><label>Responsible</label><input type="text" id="mfm-responsible" value="${f?escapeHtml(f.responsible):''}"></div>
+    </div>
+    <div class="grid2">
+      <div><label>Target date</label><input type="date" id="mfm-targetdate" value="${f?escapeHtml(f.targetDate):''}"></div>
+      <div><label>Status</label><select id="mfm-status">
+        <option value="open" ${f?.status==='open'?'selected':''}>Open</option>
+        <option value="inprogress" ${f?.status==='inprogress'?'selected':''}>In progress</option>
+        <option value="closed" ${f?.status==='closed'?'selected':''}>Closed</option></select></div>
+    </div>
+    <div class="row-between" style="margin-top:8px; margin-bottom:0;">
+      <a class="back-link" onclick="closeModal()">ยกเลิก</a>
+      <button class="btn btn-primary" onclick="saveFmeaModal('${pid||''}','${fmId||''}')">${isEdit?'บันทึกการแก้ไข':'สร้าง Failure Mode'}</button>
+    </div>
+  `);
+}
+function saveFmeaModal(pid, fmId) {
+  const failureMode = document.getElementById('mfm-failuremode').value.trim();
   if (!failureMode) { alert('กรอก Potential Failure Mode ก่อนนะครับ'); return; }
+  const targetPid = fmId ? pid : document.getElementById('mfm-process').value;
+  if (!targetPid) { alert('เลือก Process ก่อนนะครับ'); return; }
   promptUserName(false);
   const fm = {
-    failureMode, effect: document.getElementById('fm-effect').value.trim(),
-    severity: document.getElementById('fm-severity').value.trim(),
-    cause: document.getElementById('fm-cause').value.trim(),
-    occurrence: document.getElementById('fm-occurrence').value.trim(),
-    prevention: document.getElementById('fm-prevention').value.trim(),
-    detectionControl: document.getElementById('fm-detectioncontrol').value.trim(),
-    detection: document.getElementById('fm-detection').value.trim(),
-    ap: document.getElementById('fm-ap').value,
-    recommendedAction: document.getElementById('fm-recommendedaction').value.trim(),
-    responsible: document.getElementById('fm-responsible').value.trim(),
-    targetDate: document.getElementById('fm-targetdate').value,
-    status: document.getElementById('fm-status').value
+    failureMode, effect: document.getElementById('mfm-effect').value.trim(),
+    severity: document.getElementById('mfm-severity').value.trim(),
+    cause: document.getElementById('mfm-cause').value.trim(),
+    occurrence: document.getElementById('mfm-occurrence').value.trim(),
+    prevention: document.getElementById('mfm-prevention').value.trim(),
+    detectionControl: document.getElementById('mfm-detectioncontrol').value.trim(),
+    detection: document.getElementById('mfm-detection').value.trim(),
+    ap: document.getElementById('mfm-ap').value,
+    recommendedAction: document.getElementById('mfm-recommendedaction').value.trim(),
+    responsible: document.getElementById('mfm-responsible').value.trim(),
+    targetDate: document.getElementById('mfm-targetdate').value,
+    status: document.getElementById('mfm-status').value
   };
-  if (editingFmId) {
-    const old = allProcesses[currentProcessId].fmea[editingFmId];
+  if (fmId) {
+    const old = allProcesses[pid].fmea[fmId];
     const changes = diffFields(old, fm, FM_LABELS);
     fm.updatedBy = userName || 'ไม่ระบุชื่อ'; fm.updatedAt = Date.now();
-    update(ref(db, 'processes/' + currentProcessId + '/fmea/' + editingFmId), fm).then(() => {
-      if (changes.length) pushLog('processes/' + currentProcessId + '/fmea/' + editingFmId + '/log', { action: 'edited', by: userName || 'ไม่ระบุชื่อ', at: Date.now(), changes });
-      cancelFmEdit();
+    update(ref(db, 'processes/' + pid + '/fmea/' + fmId), fm).then(() => {
+      if (changes.length) pushLog('processes/' + pid + '/fmea/' + fmId + '/log', { action:'edited', by:userName||'ไม่ระบุชื่อ', at:Date.now(), changes });
+      closeModal();
     });
   } else {
     fm.enteredBy = userName || 'ไม่ระบุชื่อ'; fm.enteredAt = Date.now();
-    const newRef = push(ref(db, 'processes/' + currentProcessId + '/fmea'));
+    const newRef = push(ref(db, 'processes/' + targetPid + '/fmea'));
     set(newRef, fm).then(() => {
-      pushLog('processes/' + currentProcessId + '/fmea/' + newRef.key + '/log', { action: 'created', by: userName || 'ไม่ระบุชื่อ', at: Date.now() });
-      resetFmForm();
+      pushLog('processes/' + targetPid + '/fmea/' + newRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
+      closeModal();
     });
   }
 }
-function renderFmeaView() {
-  const p = allProcesses[currentProcessId];
-  if (!p) return;
-  document.getElementById('fmea-process-title').textContent = p.processNo + ' \u00b7 ' + p.processName;
-  document.getElementById('fmea-process-tools').textContent = Object.values(p.tools||{}).join(', ') || 'ไม่มีเครื่องมือระบุ';
-  const fms = p.fmea || {};
-  const ids = Object.keys(fms);
-  const el = document.getElementById('fmea-list');
-  if (!ids.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Failure Mode</p>'; return; }
-  ids.sort((a,b) => (fms[a].enteredAt||0) - (fms[b].enteredAt||0));
+function deleteFailureMode(pid, fmId) {
+  if (!confirm('ลบ Failure Mode นี้หรือไม่?')) return;
+  remove(ref(db, 'processes/' + pid + '/fmea/' + fmId));
+}
+function renderFmeaTable() {
+  const rows = flattenFmea();
+  const el = document.getElementById('fmea-table-wrap');
+  if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Failure Mode &mdash; กด "+ สร้าง Failure Mode ใหม่"</p>'; return; }
   const apCls = ap => ap === 'H' ? 'badge-coral' : (ap === 'M' ? 'badge-amber' : 'badge-slate');
-  el.innerHTML = ids.map(id => {
-    const f = fms[id];
-    const logCount = Object.keys(f.log || {}).length;
-    return `<div>
-    <div class="list-item">
-      <div>
-        <p style="margin:0; font-weight:600;">${escapeHtml(f.failureMode)} &rarr; ${escapeHtml(f.effect || '-')}</p>
-        <p class="meta">S:${escapeHtml(f.severity||'-')} O:${escapeHtml(f.occurrence||'-')} D:${escapeHtml(f.detection||'-')} \u00b7 ${escapeHtml(f.recommendedAction || 'ไม่มีมาตรการเพิ่มเติม')} \u00b7 ${whoWhen(f)}</p>
-      </div>
-      <div class="actions">
-        <span class="badge ${apCls(f.ap)}" style="cursor:default;">AP: ${escapeHtml(f.ap)}</span>
-        <button class="btn btn-sm btn-ghost" onclick="toggleFmLog('${id}')">ประวัติ (${logCount})</button>
-        <button class="btn btn-icon" onclick="editFailureMode('${id}')" title="แก้ไข">&#9998;</button>
-        <button class="btn btn-icon btn-danger" onclick="deleteFailureMode('${id}')" title="ลบ">&times;</button>
-      </div>
-    </div>
-    ${expandedFmLog[id] ? `<div class="history-panel">${renderLogEntries(f.log)}</div>` : ''}
-    </div>`;
-  }).join('');
+  el.innerHTML = `<table class="data-table"><tr>
+    <th>Process</th><th>Failure Mode</th><th>Effect</th><th>S</th><th>Cause</th><th>O</th><th>Prevention</th><th>Detection Control</th><th>D</th><th>AP</th><th>Recommended Action</th><th>Responsible</th><th>Target date</th><th>Status</th><th>บันทึก</th><th></th>
+  </tr>${rows.map(r => `<tr>
+    <td>${escapeHtml(processLabel(r.pid))}</td>
+    <td>${escapeHtml(r.failureMode)}</td><td>${escapeHtml(r.effect)}</td><td>${escapeHtml(r.severity)}</td>
+    <td>${escapeHtml(r.cause)}</td><td>${escapeHtml(r.occurrence)}</td><td>${escapeHtml(r.prevention)}</td>
+    <td>${escapeHtml(r.detectionControl)}</td><td>${escapeHtml(r.detection)}</td>
+    <td><span class="badge ${apCls(r.ap)}">${escapeHtml(r.ap)}</span></td>
+    <td>${escapeHtml(r.recommendedAction)}</td><td>${escapeHtml(r.responsible)}</td><td>${escapeHtml(r.targetDate)}</td><td>${escapeHtml(r.status)}</td>
+    <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
+    <td class="actions-cell">
+      <button class="btn btn-icon" onclick="openHistoryModal('processes/${r.pid}/fmea/${r.fmId}','${escapeHtml(r.failureMode)}')" title="ประวัติ">&#128337;</button>
+      <button class="btn btn-icon" onclick="openFmeaModal('${r.pid}','${r.fmId}')" title="แก้ไข">&#9998;</button>
+      <button class="btn btn-icon btn-danger" onclick="deleteFailureMode('${r.pid}','${r.fmId}')" title="ลบ">&times;</button>
+    </td>
+  </tr>`).join('')}</table>`;
 }
 
-// ---------- Control Plan sub-view ----------
-function blankChar(nextNo) { return { key: uid(), charNo: String(nextNo), productChar:'', processChar:'', spec:'', document:'', evaluation:'', sampleSize:'', frequency:'', qualityRecord:'', owner:'', reaction:'' }; }
-let cpChars = [];
-function nextCharNo() {
-  const p = allProcesses[currentProcessId];
-  const nums = Object.values(p?.controlPlan?.chars || {}).map(c => parseFloat(c.charNo) || 0);
+// ================= CONTROL PLAN (global tab) =================
+const CHAR_LABELS = {
+  charNo:'Characteristic No.', productChar:'Product characteristic', processChar:'Process characteristic',
+  spec:'Spec / Tolerance', document:'Document', evaluation:'Evaluation', sampleSize:'จำนวน',
+  frequency:'ความถี่', qualityRecord:'บันทึกคุณภาพ', owner:'Owner', reaction:'Reaction'
+};
+function flattenChars() {
+  const rows = [];
+  Object.keys(allProcesses).forEach(pid => {
+    Object.entries(allProcesses[pid].controlPlan?.chars || {}).forEach(([cid, c]) => rows.push({ pid, cid, ...c }));
+  });
+  rows.sort((a,b) => activityTime(b) - activityTime(a));
+  return rows;
+}
+function nextCharNoFor(pid) {
+  const chars = allProcesses[pid]?.controlPlan?.chars || {};
+  const nums = Object.values(chars).map(c => parseFloat(c.charNo) || 0);
   return (nums.length ? Math.max(...nums) : 0) + 1;
 }
-function resetCpForm() { cpChars = [blankChar(nextCharNo())]; renderCharCards(); }
-function renderCharCards() {
-  document.getElementById('cp-char-cards').innerHTML = cpChars.map((c, i) => `
-    <div class="card-block">
-      <div class="card-block-head">
-        <span>Characteristic No. <input type="text" style="width:60px; display:inline-block; height:26px; padding:0 6px;" value="${escapeHtml(c.charNo)}" oninput="updateChar('${c.key}','charNo',this.value)"></span>
-        ${cpChars.length > 1 ? `<button class="btn btn-sm btn-danger" onclick="removeCharCard('${c.key}')">ลบ</button>` : ''}
+function blankChar(no) { return { key: uid(), charNo:String(no), productChar:'', processChar:'', spec:'', document:'', evaluation:'', sampleSize:'', frequency:'', qualityRecord:'', owner:'', reaction:'' }; }
+let modalCpChars = [];
+let modalCpPid = null;
+function openCharModal(pid, cid) {
+  const c = (pid && cid) ? allProcesses[pid].controlPlan.chars[cid] : null;
+  const isEdit = !!c;
+  if (isEdit) {
+    modalCpPid = pid;
+    showModal(`
+      <h2>แก้ไข Characteristic</h2>
+      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">Process: <b>${escapeHtml(processLabel(pid))}</b></p>
+      ${charFieldsHtml(c, 'medit')}
+      <div class="row-between" style="margin-top:8px; margin-bottom:0;">
+        <a class="back-link" onclick="closeModal()">ยกเลิก</a>
+        <button class="btn btn-primary" onclick="saveCharEditModal('${pid}','${cid}')">บันทึกการแก้ไข</button>
       </div>
-      <div class="grid2">
-        <div><label>Product characteristic</label><input type="text" value="${escapeHtml(c.productChar)}" oninput="updateChar('${c.key}','productChar',this.value)"></div>
-        <div><label>Process characteristic</label><input type="text" value="${escapeHtml(c.processChar)}" oninput="updateChar('${c.key}','processChar',this.value)"></div>
+    `);
+  } else {
+    modalCpChars = [blankChar(nextCharNoFor(pid || sortedProcessIds()[0]))];
+    showModal(`
+      <h2>สร้าง Characteristic ใหม่</h2>
+      <div style="margin-bottom:12px;"><label>เลือก Process</label><select id="mch-process" onchange="onModalProcessChange()">${processOptionsHtml(pid)}</select></div>
+      <div id="mch-cards"></div>
+      <button class="btn btn-sm btn-ghost" onclick="addModalCharCard()">+ เพิ่ม Characteristic</button>
+      <div class="row-between" style="margin-top:16px; margin-bottom:0;">
+        <a class="back-link" onclick="closeModal()">ยกเลิก</a>
+        <button class="btn btn-primary" onclick="saveCharModal()">บันทึกทั้งหมด</button>
       </div>
-      <div class="grid2">
-        <div><label>Spec / Tolerance</label><input type="text" value="${escapeHtml(c.spec)}" oninput="updateChar('${c.key}','spec',this.value)"></div>
-        <div><label>Document</label><input type="text" value="${escapeHtml(c.document)}" oninput="updateChar('${c.key}','document',this.value)"></div>
-        <div><label>Evaluation</label><input type="text" value="${escapeHtml(c.evaluation)}" oninput="updateChar('${c.key}','evaluation',this.value)"></div>
-      </div>
-      <div class="grid2">
-        <div><label>จำนวน</label><input type="text" value="${escapeHtml(c.sampleSize)}" oninput="updateChar('${c.key}','sampleSize',this.value)"></div>
-        <div><label>ความถี่</label><input type="text" value="${escapeHtml(c.frequency)}" oninput="updateChar('${c.key}','frequency',this.value)"></div>
-      </div>
-      <div class="grid2" style="margin-bottom:0;">
-        <div><label>บันทึกคุณภาพ</label><input type="text" value="${escapeHtml(c.qualityRecord)}" oninput="updateChar('${c.key}','qualityRecord',this.value)"></div>
-        <div><label>Owner</label><input type="text" value="${escapeHtml(c.owner)}" oninput="updateChar('${c.key}','owner',this.value)"></div>
-        <div><label>Reaction</label><input type="text" value="${escapeHtml(c.reaction)}" oninput="updateChar('${c.key}','reaction',this.value)"></div>
-      </div>
-    </div>`).join('');
+    `);
+    renderModalCharCards();
+  }
 }
-function addCharCard() { cpChars.push(blankChar(nextCharNo() + cpChars.length)); renderCharCards(); }
-function removeCharCard(key) { cpChars = cpChars.filter(c => c.key !== key); renderCharCards(); }
-function updateChar(key, field, val) { const c = cpChars.find(c => c.key === key); if (c) c[field] = val; }
-function saveCharacteristics() {
-  promptUserName(false);
-  const updates = {};
-  cpChars.forEach(c => {
-    updates['processes/' + currentProcessId + '/controlPlan/chars/' + c.key] = {
-      charNo: c.charNo.trim(), productChar: c.productChar.trim(), processChar: c.processChar.trim(), spec: c.spec.trim(),
-      document: c.document.trim(), evaluation: c.evaluation.trim(), sampleSize: c.sampleSize.trim(),
-      frequency: c.frequency.trim(), qualityRecord: c.qualityRecord.trim(), owner: c.owner.trim(), reaction: c.reaction.trim(),
-      enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
-    };
-  });
-  update(ref(db), updates).then(() => {
-    cpChars.forEach(c => pushLog('processes/' + currentProcessId + '/controlPlan/chars/' + c.key + '/log', { action: 'created', by: userName || 'ไม่ระบุชื่อ', at: Date.now() }));
-    resetCpForm();
-  });
-}
-function deleteChar(cid) {
-  if (!confirm('ลบ Characteristic นี้หรือไม่?')) return;
-  remove(ref(db, 'processes/' + currentProcessId + '/controlPlan/chars/' + cid));
-  if (editingCharId === cid) editingCharId = null;
-}
-function editChar(cid) { editingCharId = cid; renderCpView(); }
-function cancelCharEdit() { editingCharId = null; renderCpView(); }
-function saveCharEdit(cid) {
-  promptUserName(false);
-  const row = document.querySelector('[data-editrow="' + cid + '"]');
-  const get = f => row.querySelector('[data-f="' + f + '"]').value.trim();
-  const old = allProcesses[currentProcessId].controlPlan.chars[cid];
-  const updated = {
-    charNo: get('charNo'), productChar: get('productChar'), processChar: get('processChar'), spec: get('spec'),
-    document: get('document'), evaluation: get('evaluation'), sampleSize: get('sampleSize'), frequency: get('frequency'),
-    qualityRecord: get('qualityRecord'), owner: get('owner'), reaction: get('reaction')
-  };
-  const changes = diffFields(old, updated, CHAR_LABELS);
-  updated.updatedBy = userName || 'ไม่ระบุชื่อ'; updated.updatedAt = Date.now();
-  update(ref(db, 'processes/' + currentProcessId + '/controlPlan/chars/' + cid), updated).then(() => {
-    if (changes.length) pushLog('processes/' + currentProcessId + '/controlPlan/chars/' + cid + '/log', { action: 'edited', by: userName || 'ไม่ระบุชื่อ', at: Date.now(), changes });
-    editingCharId = null;
-  });
-}
-function charEditRowHtml(cid, c) {
-  const f = (key, label) => `<div><label>${label}</label><input type="text" data-f="${key}" value="${escapeHtml(c[key])}"></div>`;
-  return `<div class="card-block editing" data-editrow="${cid}">
-    <div class="card-block-head"><span>แก้ไข Characteristic No. <input type="text" data-f="charNo" style="width:60px; display:inline-block; height:26px; padding:0 6px;" value="${escapeHtml(c.charNo)}"></span></div>
+function charFieldsHtml(c, prefix) {
+  const f = (key, label, wide) => `<div${wide?' style="grid-column:span 1;"':''}><label>${label}</label><input type="text" data-${prefix}-f="${key}" value="${escapeHtml(c[key])}"></div>`;
+  return `
+    <div class="grid3" style="margin-bottom:12px;"><div><label>Characteristic No.</label><input type="text" data-${prefix}-f="charNo" value="${escapeHtml(c.charNo)}" style="width:100px;"></div></div>
     <div class="grid2">${f('productChar','Product characteristic')}${f('processChar','Process characteristic')}</div>
     <div class="grid2">${f('spec','Spec / Tolerance')}${f('document','Document')}${f('evaluation','Evaluation')}</div>
     <div class="grid2">${f('sampleSize','จำนวน')}${f('frequency','ความถี่')}</div>
     <div class="grid2" style="margin-bottom:0;">${f('qualityRecord','บันทึกคุณภาพ')}${f('owner','Owner')}${f('reaction','Reaction')}</div>
-    <div class="row-between" style="margin-top:10px;">
-      <a class="back-link" onclick="cancelCharEdit()">ยกเลิก</a>
-      <button class="btn btn-primary btn-sm" onclick="saveCharEdit('${cid}')">บันทึกการแก้ไข</button>
-    </div>
-  </div>`;
+  `;
 }
-function renderCpView() {
-  const p = allProcesses[currentProcessId];
-  if (!p) return;
-  document.getElementById('cp-process-title').textContent = p.processNo + ' \u00b7 ' + p.processName;
-  document.getElementById('cp-process-tools').textContent = Object.values(p.tools||{}).join(', ') || 'ไม่มีเครื่องมือระบุ';
-  const chars = Object.entries(p.controlPlan?.chars || {}).sort((a,b) => parseFloat(a[1].charNo||0) - parseFloat(b[1].charNo||0));
-  document.getElementById('cp-list-title').textContent = 'Characteristic ที่บันทึกไว้ (' + chars.length + ')';
-  const el = document.getElementById('cp-list');
-  if (!chars.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Characteristic</p>'; return; }
-  el.innerHTML = chars.map(([k,c]) => {
-    if (editingCharId === k) return charEditRowHtml(k, c);
-    const logCount = Object.keys(c.log || {}).length;
-    return `<div>
-    <div class="list-item">
-      <div>
-        <p style="margin:0;"><b>${escapeHtml(c.charNo)}</b> &middot; ${escapeHtml(c.productChar || c.processChar || '(ไม่ระบุชื่อ)')}</p>
-        <p class="meta">Spec: ${escapeHtml(c.spec || '-')} \u00b7 ${whoWhen(c)}</p>
+function saveCharEditModal(pid, cid) {
+  promptUserName(false);
+  const get = f => document.querySelector('[data-medit-f="' + f + '"]').value.trim();
+  const old = allProcesses[pid].controlPlan.chars[cid];
+  const updated = { charNo:get('charNo'), productChar:get('productChar'), processChar:get('processChar'), spec:get('spec'), document:get('document'), evaluation:get('evaluation'), sampleSize:get('sampleSize'), frequency:get('frequency'), qualityRecord:get('qualityRecord'), owner:get('owner'), reaction:get('reaction') };
+  const changes = diffFields(old, updated, CHAR_LABELS);
+  updated.updatedBy = userName || 'ไม่ระบุชื่อ'; updated.updatedAt = Date.now();
+  update(ref(db, 'processes/' + pid + '/controlPlan/chars/' + cid), updated).then(() => {
+    if (changes.length) pushLog('processes/' + pid + '/controlPlan/chars/' + cid + '/log', { action:'edited', by:userName||'ไม่ระบุชื่อ', at:Date.now(), changes });
+    closeModal();
+  });
+}
+function onModalProcessChange() { modalCpChars = [blankChar(nextCharNoFor(document.getElementById('mch-process').value))]; renderModalCharCards(); }
+function renderModalCharCards() {
+  document.getElementById('mch-cards').innerHTML = modalCpChars.map((c,i) => `
+    <div class="card-block">
+      <div class="card-block-head">
+        <span>Characteristic ${i+1}</span>
+        ${modalCpChars.length > 1 ? `<button class="btn btn-sm btn-danger" onclick="removeModalCharCard('${c.key}')">ลบ</button>` : ''}
       </div>
-      <div class="actions">
-        <button class="btn btn-sm btn-ghost" onclick="toggleCharLog('${k}')">ประวัติ (${logCount})</button>
-        <button class="btn btn-icon" onclick="editChar('${k}')" title="แก้ไข">&#9998;</button>
-        <button class="btn btn-icon btn-danger" onclick="deleteChar('${k}')" title="ลบ">&times;</button>
+      <div class="grid3" style="margin-bottom:12px;"><div><label>No.</label><input type="text" value="${escapeHtml(c.charNo)}" oninput="updateModalChar('${c.key}','charNo',this.value)" style="width:100px;"></div></div>
+      <div class="grid2">
+        <div><label>Product characteristic</label><input type="text" value="${escapeHtml(c.productChar)}" oninput="updateModalChar('${c.key}','productChar',this.value)"></div>
+        <div><label>Process characteristic</label><input type="text" value="${escapeHtml(c.processChar)}" oninput="updateModalChar('${c.key}','processChar',this.value)"></div>
       </div>
-    </div>
-    ${expandedCharLog[k] ? `<div class="history-panel">${renderLogEntries(c.log)}</div>` : ''}
-    </div>`;
-  }).join('');
+      <div class="grid2">
+        <div><label>Spec / Tolerance</label><input type="text" value="${escapeHtml(c.spec)}" oninput="updateModalChar('${c.key}','spec',this.value)"></div>
+        <div><label>Document</label><input type="text" value="${escapeHtml(c.document)}" oninput="updateModalChar('${c.key}','document',this.value)"></div>
+        <div><label>Evaluation</label><input type="text" value="${escapeHtml(c.evaluation)}" oninput="updateModalChar('${c.key}','evaluation',this.value)"></div>
+      </div>
+      <div class="grid2">
+        <div><label>จำนวน</label><input type="text" value="${escapeHtml(c.sampleSize)}" oninput="updateModalChar('${c.key}','sampleSize',this.value)"></div>
+        <div><label>ความถี่</label><input type="text" value="${escapeHtml(c.frequency)}" oninput="updateModalChar('${c.key}','frequency',this.value)"></div>
+      </div>
+      <div class="grid2" style="margin-bottom:0;">
+        <div><label>บันทึกคุณภาพ</label><input type="text" value="${escapeHtml(c.qualityRecord)}" oninput="updateModalChar('${c.key}','qualityRecord',this.value)"></div>
+        <div><label>Owner</label><input type="text" value="${escapeHtml(c.owner)}" oninput="updateModalChar('${c.key}','owner',this.value)"></div>
+        <div><label>Reaction</label><input type="text" value="${escapeHtml(c.reaction)}" oninput="updateModalChar('${c.key}','reaction',this.value)"></div>
+      </div>
+    </div>`).join('');
+}
+function addModalCharCard() { modalCpChars.push(blankChar(nextCharNoFor(document.getElementById('mch-process').value) + modalCpChars.length)); renderModalCharCards(); }
+function removeModalCharCard(key) { modalCpChars = modalCpChars.filter(c => c.key !== key); renderModalCharCards(); }
+function updateModalChar(key, field, val) { const c = modalCpChars.find(c => c.key === key); if (c) c[field] = val; }
+function saveCharModal() {
+  const pid = document.getElementById('mch-process').value;
+  if (!pid) { alert('เลือก Process ก่อนนะครับ'); return; }
+  promptUserName(false);
+  const updates = {};
+  modalCpChars.forEach(c => {
+    updates['processes/' + pid + '/controlPlan/chars/' + c.key] = {
+      charNo:c.charNo.trim(), productChar:c.productChar.trim(), processChar:c.processChar.trim(), spec:c.spec.trim(),
+      document:c.document.trim(), evaluation:c.evaluation.trim(), sampleSize:c.sampleSize.trim(), frequency:c.frequency.trim(),
+      qualityRecord:c.qualityRecord.trim(), owner:c.owner.trim(), reaction:c.reaction.trim(),
+      enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
+    };
+  });
+  update(ref(db), updates).then(() => {
+    modalCpChars.forEach(c => pushLog('processes/' + pid + '/controlPlan/chars/' + c.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() }));
+    closeModal();
+  });
+}
+function deleteChar(pid, cid) {
+  if (!confirm('ลบ Characteristic นี้หรือไม่?')) return;
+  remove(ref(db, 'processes/' + pid + '/controlPlan/chars/' + cid));
+}
+function renderCpTable() {
+  const rows = flattenChars();
+  const el = document.getElementById('cp-table-wrap');
+  if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Characteristic &mdash; กด "+ สร้าง Characteristic ใหม่"</p>'; return; }
+  el.innerHTML = `<table class="data-table"><tr>
+    <th>Process</th><th>No.</th><th>Product char.</th><th>Process char.</th><th>Spec/Tolerance</th><th>Document</th><th>Evaluation</th><th>จำนวน</th><th>ความถี่</th><th>บันทึกคุณภาพ</th><th>Owner</th><th>Reaction</th><th>บันทึก</th><th></th>
+  </tr>${rows.map(r => `<tr>
+    <td>${escapeHtml(processLabel(r.pid))}</td><td>${escapeHtml(r.charNo)}</td><td>${escapeHtml(r.productChar)}</td><td>${escapeHtml(r.processChar)}</td>
+    <td>${escapeHtml(r.spec)}</td><td>${escapeHtml(r.document)}</td><td>${escapeHtml(r.evaluation)}</td><td>${escapeHtml(r.sampleSize)}</td>
+    <td>${escapeHtml(r.frequency)}</td><td>${escapeHtml(r.qualityRecord)}</td><td>${escapeHtml(r.owner)}</td><td>${escapeHtml(r.reaction)}</td>
+    <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
+    <td class="actions-cell">
+      <button class="btn btn-icon" onclick="openHistoryModal('processes/${r.pid}/controlPlan/chars/${r.cid}','${escapeHtml(r.charNo)} \u00b7 ${escapeHtml(r.productChar||r.processChar||'')}')" title="ประวัติ">&#128337;</button>
+      <button class="btn btn-icon" onclick="openCharModal('${r.pid}','${r.cid}')" title="แก้ไข">&#9998;</button>
+      <button class="btn btn-icon btn-danger" onclick="deleteChar('${r.pid}','${r.cid}')" title="ลบ">&times;</button>
+    </td>
+  </tr>`).join('')}</table>`;
 }
 
 // ---------- Export ----------
@@ -692,10 +665,7 @@ function renderExportChecklist() {
   document.getElementById('export-process-checklist').innerHTML = ids.map(id => {
     const p = allProcesses[id];
     const n = Object.keys(p.controlPlan?.chars || {}).length;
-    return `<div class="export-picker-row">
-      <input type="checkbox" data-pid="${id}" ${n ? '' : 'disabled'}>
-      <span>${escapeHtml(p.processNo)} \u00b7 ${escapeHtml(p.processName)} ${n ? '(' + n + ' characteristic)' : '(ยังไม่มี Characteristic)'}</span>
-    </div>`;
+    return `<div class="export-picker-row"><input type="checkbox" data-pid="${id}" ${n?'':'disabled'}><span>${escapeHtml(p.processNo)} \u00b7 ${escapeHtml(p.processName)} ${n?'('+n+' characteristic)':'(ยังไม่มี Characteristic)'}</span></div>`;
   }).join('');
 }
 function buildControlPlanSheet(pids, filename) {
@@ -732,38 +702,32 @@ function exportCombined() {
   checked.sort((a,b) => parseFloat(allProcesses[a].processNo) - parseFloat(allProcesses[b].processNo));
   buildControlPlanSheet(checked, 'ControlPlan_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
 }
-function exportSingleProcess() {
-  const partNo = document.getElementById('cp-export-partno').value.trim() || allProcesses[currentProcessId].processName;
-  buildControlPlanSheet([currentProcessId], 'ControlPlan_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
-}
 
 window.promptUserName = promptUserName;
-window.goHome = goHome;
-window.openFmea = openFmea;
-window.openCp = openCp;
-window.addTool = addTool;
-window.removePoTool = removePoTool;
-window.updatePoTool = updatePoTool;
-window.savePoProcess = savePoProcess;
+window.switchTab = switchTab;
+window.closeModal = closeModal;
+window.openProcessModal = openProcessModal;
+window.addModalTool = addModalTool;
+window.removeModalTool = removeModalTool;
+window.updateModalTool = updateModalTool;
+window.saveProcessModal = saveProcessModal;
 window.deleteProcess = deleteProcess;
 window.toggleExpand = toggleExpand;
-window.editFailureMode = editFailureMode;
+window.openHistoryModal = openHistoryModal;
+window.deleteLogEntry = deleteLogEntry;
+window.openFmeaModal = openFmeaModal;
+window.saveFmeaModal = saveFmeaModal;
 window.deleteFailureMode = deleteFailureMode;
-window.toggleFmLog = toggleFmLog;
-window.toggleCharLog = toggleCharLog;
-window.cancelFmEdit = cancelFmEdit;
-window.saveFailureMode = saveFailureMode;
-window.addCharCard = addCharCard;
-window.removeCharCard = removeCharCard;
-window.updateChar = updateChar;
-window.saveCharacteristics = saveCharacteristics;
+window.openCharModal = openCharModal;
+window.saveCharEditModal = saveCharEditModal;
+window.onModalProcessChange = onModalProcessChange;
+window.addModalCharCard = addModalCharCard;
+window.removeModalCharCard = removeModalCharCard;
+window.updateModalChar = updateModalChar;
+window.saveCharModal = saveCharModal;
 window.deleteChar = deleteChar;
-window.editChar = editChar;
-window.cancelCharEdit = cancelCharEdit;
-window.saveCharEdit = saveCharEdit;
 window.toggleExportPicker = toggleExportPicker;
 window.exportCombined = exportCombined;
-window.exportSingleProcess = exportSingleProcess;
 </script>
 </body>
 </html>
