@@ -104,9 +104,14 @@ table.data-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; 
 table.data-table td{max-width:0; overflow:hidden;}
 table.data-table td.actions-cell{max-width:none; overflow:visible; white-space:nowrap; text-align:right;}
 table.data-table .btn-icon{padding:2px 5px; font-size:12px;}
-table.mini-table{width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:4px;}
-table.mini-table th, table.mini-table td{border:1px solid var(--line); padding:5px 7px; text-align:left;}
-table.mini-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
+table.mini-table{width:100%; max-width:100%; border-collapse:collapse; font-size:11px; margin-bottom:4px; table-layout:fixed;}
+table.mini-table th, table.mini-table td{border:1px solid var(--line); padding:5px 7px; text-align:left; word-break:break-word; overflow-wrap:break-word; line-height:1.35;}
+table.mini-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600;}
+table.mini-table td{max-width:0; overflow:hidden;}
+table.mini-table td.no-cell{max-width:none; overflow:visible;}
+table.mini-table a.no-link{color:var(--navy); font-weight:600; cursor:pointer; text-decoration:underline;}
+.process-tools ul{margin:2px 0 0; padding-left:16px;}
+textarea{width:100%; min-height:56px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; background:#fff; font-family:inherit; color:var(--ink); resize:vertical;}
 .table-scroll{overflow-x:auto;}
 
 .hidden{display:none !important;}
@@ -248,6 +253,7 @@ const db = getDatabase(app);
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 function escapeHtml(str) { return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function nl2br(str) { return escapeHtml(str).replace(/\n/g, '<br>'); }
 function formatTime(ts) { if (!ts) return '-'; const d = new Date(ts); return d.toLocaleDateString('th-TH') + ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}); }
 function whoWhen(o) { return o.updatedBy ? ('แก้ไขล่าสุดโดย ' + escapeHtml(o.updatedBy) + ' \u00b7 ' + formatTime(o.updatedAt)) : ('กรอกโดย ' + escapeHtml(o.enteredBy) + ' \u00b7 ' + formatTime(o.enteredAt)); }
 function activityTime(o) { return o.updatedAt || o.enteredAt || 0; }
@@ -368,21 +374,39 @@ function renderProcessList() {
     const p = allProcesses[id];
     const fmCount = Object.keys(p.fmea || {}).length;
     const chCount = Object.keys(p.controlPlan?.chars || {}).length;
-    const toolsTxt = Object.values(p.tools || {}).join(', ') || 'ไม่มีเครื่องมือระบุ';
+    const toolList = Object.values(p.tools || {});
+    const toolsHtml = toolList.length ? ('<ul>' + toolList.map(t => `<li>${escapeHtml(t)}</li>`).join('') + '</ul>') : 'ไม่มีเครื่องมือระบุ';
     const expanded = !!expandedProcesses[id];
     let expandHtml = '';
     if (expanded) {
-      const fms = Object.values(p.fmea || {}).sort((a,b) => (parseFloat(a.fmNo)||0) - (parseFloat(b.fmNo)||0));
-      const fmTable = fms.length ? `<table class="mini-table"><tr><th>No.</th><th>Failure Mode</th><th>Effect</th><th>S</th><th>Cause</th><th>O</th><th>Prevention</th><th>Detection Control</th><th>D</th><th>AP</th><th>Recommended Action</th><th>Responsible</th><th>Target date</th><th>Status</th></tr>${fms.map(f => `<tr><td>${escapeHtml(f.fmNo)}</td><td>${escapeHtml(f.failureMode)}</td><td>${escapeHtml(f.effect)}</td><td>${escapeHtml(f.severity)}</td><td>${escapeHtml(f.cause)}</td><td>${escapeHtml(f.occurrence)}</td><td>${escapeHtml(f.prevention)}</td><td>${escapeHtml(f.detectionControl)}</td><td>${escapeHtml(f.detection)}</td><td>${escapeHtml(f.ap)}</td><td>${escapeHtml(f.recommendedAction)}</td><td>${escapeHtml(f.responsible)}</td><td>${escapeHtml(f.targetDate)}</td><td>${escapeHtml(f.status)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Mode</p>';
-      const chars = Object.values(p.controlPlan?.chars || {}).sort((a,b) => parseFloat(a.charNo||0) - parseFloat(b.charNo||0));
-      const chTable = chars.length ? `<table class="mini-table"><tr><th>No.</th><th>Product char.</th><th>Process char.</th><th>Spec</th><th>Document</th><th>Evaluation</th><th>จำนวน</th><th>ความถี่</th><th>บันทึกคุณภาพ</th><th>Owner</th><th>Reaction</th></tr>${chars.map(c => `<tr><td>${escapeHtml(c.charNo)}</td><td>${escapeHtml(c.productChar)}</td><td>${escapeHtml(c.processChar)}</td><td>${escapeHtml(c.spec)}</td><td>${escapeHtml(c.document)}</td><td>${escapeHtml(c.evaluation)}</td><td>${escapeHtml(c.sampleSize)}</td><td>${escapeHtml(c.frequency)}</td><td>${escapeHtml(c.qualityRecord)}</td><td>${escapeHtml(c.owner)}</td><td>${escapeHtml(c.reaction)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Characteristic</p>';
+      const fmEntries = Object.entries(p.fmea || {}).sort((a,b) => (parseFloat(a[1].fmNo)||0) - (parseFloat(b[1].fmNo)||0));
+      const fmTable = fmEntries.length ? `<table class="mini-table"><tr>
+        <th style="width:4%;">No.</th><th style="width:12%;">Failure Mode</th><th style="width:12%;">Effect</th><th style="width:3%;">S</th>
+        <th style="width:12%;">Cause</th><th style="width:3%;">O</th><th style="width:12%;">Prevention</th><th style="width:12%;">Detection Control</th>
+        <th style="width:3%;">D</th><th style="width:4%;">AP</th><th style="width:11%;">Recommended Action</th><th style="width:9%;">Responsible</th><th style="width:7%;">Target date</th><th style="width:6%;">Status</th>
+      </tr>${fmEntries.map(([fmId,f]) => `<tr>
+        <td class="no-cell"><a class="no-link" onclick="openFmeaModal('${id}','${fmId}')">${escapeHtml(f.fmNo)}</a></td>
+        <td>${nl2br(f.failureMode)}</td><td>${nl2br(f.effect)}</td><td>${escapeHtml(f.severity)}</td>
+        <td>${nl2br(f.cause)}</td><td>${escapeHtml(f.occurrence)}</td><td>${nl2br(f.prevention)}</td><td>${nl2br(f.detectionControl)}</td>
+        <td>${escapeHtml(f.detection)}</td><td>${escapeHtml(f.ap)}</td><td>${nl2br(f.recommendedAction)}</td><td>${escapeHtml(f.responsible)}</td><td>${escapeHtml(f.targetDate)}</td><td>${escapeHtml(f.status)}</td>
+      </tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Mode</p>';
+      const charEntriesList = Object.entries(p.controlPlan?.chars || {}).sort((a,b) => (parseFloat(a[1].charNo)||0) - (parseFloat(b[1].charNo)||0));
+      const chTable = charEntriesList.length ? `<table class="mini-table"><tr>
+        <th style="width:4%;">No.</th><th style="width:14%;">Product char.</th><th style="width:13%;">Process char.</th><th style="width:11%;">Spec</th>
+        <th style="width:9%;">Document</th><th style="width:10%;">Evaluation</th><th style="width:6%;">จำนวน</th><th style="width:6%;">ความถี่</th>
+        <th style="width:9%;">บันทึกคุณภาพ</th><th style="width:8%;">Owner</th><th style="width:10%;">Reaction</th>
+      </tr>${charEntriesList.map(([cid,c]) => `<tr>
+        <td class="no-cell"><a class="no-link" onclick="openCharModal('${id}','${cid}')">${escapeHtml(c.charNo)}</a></td>
+        <td>${nl2br(c.productChar)}</td><td>${nl2br(c.processChar)}</td><td>${nl2br(c.spec)}</td><td>${nl2br(c.document)}</td><td>${nl2br(c.evaluation)}</td>
+        <td>${escapeHtml(c.sampleSize)}</td><td>${escapeHtml(c.frequency)}</td><td>${nl2br(c.qualityRecord)}</td><td>${escapeHtml(c.owner)}</td><td>${nl2br(c.reaction)}</td>
+      </tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Characteristic</p>';
       expandHtml = `<div class="expand-area"><h4>FMEA</h4>${fmTable}<h4>Control Plan</h4>${chTable}</div>`;
     }
     return `<div class="panel process-card">
       <div class="process-card-top">
         <div>
           <div class="process-name">${escapeHtml(p.processNo)} &middot; ${escapeHtml(p.processName)}</div>
-          <div class="process-tools">${escapeHtml(toolsTxt)}</div>
+          <div class="process-tools">${toolsHtml}</div>
         </div>
         <div style="display:flex; gap:6px;">
           <button class="btn btn-icon" onclick="toggleExpand('${id}')" title="แสดง/ซ่อนรายละเอียด">${expanded ? '\u25B2' : '\u25BC'}</button>
@@ -417,7 +441,7 @@ function openHistoryModal(basePath, title) {
   const rows = ids.length ? ids.map(id => {
     const l = node[id];
     const actionLabel = l.action === 'created' ? 'สร้างรายการ' : 'แก้ไข';
-    const changesHtml = (l.changes && l.changes.length) ? '<ul>' + l.changes.map(c => `<li>${escapeHtml(c.field)}: "${escapeHtml(c.oldVal)}" &rarr; "${escapeHtml(c.newVal)}"</li>`).join('') + '</ul>' : '';
+    const changesHtml = (l.changes && l.changes.length) ? '<ul>' + l.changes.map(c => `<li>${escapeHtml(c.field)}: "${nl2br(c.oldVal)}" &rarr; "${nl2br(c.newVal)}"</li>`).join('') + '</ul>' : '';
     return `<div class="log-item"><div><b>${actionLabel}</b> โดย ${escapeHtml(l.by)} \u00b7 ${formatTime(l.at)}${changesHtml}</div>
       <button class="btn btn-icon btn-danger btn-sm" onclick="deleteLogEntry('${basePath}/log/${id}')" title="ลบรายการประวัตินี้">&times;</button></div>`;
   }).join('') : '<p class="empty-state">ยังไม่มีประวัติ</p>';
@@ -465,19 +489,19 @@ function openFmeaModal(pid, fmId) {
     <div class="grid3" style="margin-bottom:12px;"><div><label>Failure Mode No.</label><input type="text" id="mfm-fmno" value="${f?escapeHtml(f.fmNo):nextFmNoFor(pid||sortedProcessIds()[0])}" style="width:100px;"></div></div>
     <h3>ความล้มเหลวและผลกระทบ</h3>
     <div class="grid2">
-      <div><label>Potential Failure Mode</label><input type="text" id="mfm-failuremode" value="${f?escapeHtml(f.failureMode):''}"></div>
-      <div><label>Potential Effect(s)</label><input type="text" id="mfm-effect" value="${f?escapeHtml(f.effect):''}"></div>
+      <div><label>Potential Failure Mode</label><textarea id="mfm-failuremode">${f?escapeHtml(f.failureMode):''}</textarea></div>
+      <div><label>Potential Effect(s)</label><textarea id="mfm-effect">${f?escapeHtml(f.effect):''}</textarea></div>
     </div>
     <div class="grid3"><div><label>Severity (S) 1-10</label><input type="number" id="mfm-severity" min="1" max="10" value="${f?escapeHtml(f.severity):''}"></div></div>
     <h3>สาเหตุ</h3>
     <div class="grid2">
-      <div><label>Potential Cause(s)</label><input type="text" id="mfm-cause" value="${f?escapeHtml(f.cause):''}"></div>
+      <div><label>Potential Cause(s)</label><textarea id="mfm-cause">${f?escapeHtml(f.cause):''}</textarea></div>
       <div><label>Occurrence (O) 1-10</label><input type="number" id="mfm-occurrence" min="1" max="10" value="${f?escapeHtml(f.occurrence):''}"></div>
     </div>
     <h3>การควบคุมปัจจุบัน</h3>
     <div class="grid2">
-      <div><label>Current Prevention Control</label><input type="text" id="mfm-prevention" value="${f?escapeHtml(f.prevention):''}"></div>
-      <div><label>Current Detection Control</label><input type="text" id="mfm-detectioncontrol" value="${f?escapeHtml(f.detectionControl):''}"></div>
+      <div><label>Current Prevention Control</label><textarea id="mfm-prevention">${f?escapeHtml(f.prevention):''}</textarea></div>
+      <div><label>Current Detection Control</label><textarea id="mfm-detectioncontrol">${f?escapeHtml(f.detectionControl):''}</textarea></div>
     </div>
     <div class="grid3">
       <div><label>Detection (D) 1-10</label><input type="number" id="mfm-detection" min="1" max="10" value="${f?escapeHtml(f.detection):''}"></div>
@@ -488,7 +512,7 @@ function openFmeaModal(pid, fmId) {
     </div>
     <h3>มาตรการและติดตาม</h3>
     <div class="grid2">
-      <div><label>Recommended Action</label><input type="text" id="mfm-recommendedaction" value="${f?escapeHtml(f.recommendedAction):''}"></div>
+      <div><label>Recommended Action</label><textarea id="mfm-recommendedaction">${f?escapeHtml(f.recommendedAction):''}</textarea></div>
       <div><label>Responsible</label><input type="text" id="mfm-responsible" value="${f?escapeHtml(f.responsible):''}"></div>
     </div>
     <div class="grid2">
@@ -562,9 +586,9 @@ function renderFmeaTable() {
   </tr>${rows.map(r => `<tr>
     <td>${escapeHtml(processLabel(r.pid))}</td>
     <td>${escapeHtml(r.fmNo)}</td>
-    <td>${escapeHtml(r.failureMode)}</td><td>${escapeHtml(r.effect)}</td>
-    <td>${escapeHtml(r.severity)}</td><td>${escapeHtml(r.cause)}</td><td>${escapeHtml(r.occurrence)}</td>
-    <td>${escapeHtml(r.prevention)}</td><td>${escapeHtml(r.detectionControl)}</td><td>${escapeHtml(r.detection)}</td>
+    <td>${nl2br(r.failureMode)}</td><td>${nl2br(r.effect)}</td>
+    <td>${escapeHtml(r.severity)}</td><td>${nl2br(r.cause)}</td><td>${escapeHtml(r.occurrence)}</td>
+    <td>${nl2br(r.prevention)}</td><td>${nl2br(r.detectionControl)}</td><td>${escapeHtml(r.detection)}</td>
     <td><span class="badge ${apCls(r.ap)}">${escapeHtml(r.ap)}</span></td>
     <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
     <td class="actions-cell">
@@ -671,7 +695,10 @@ function openCharModal(pid, cid) {
   }
 }
 function charFieldsHtml(c, prefix) {
-  const f = (key, label, wide) => `<div${wide?' style="grid-column:span 1;"':''}><label>${label}</label><input type="text" data-${prefix}-f="${key}" value="${escapeHtml(c[key])}"></div>`;
+  const longFields = ['productChar','processChar','spec','document','evaluation','qualityRecord','reaction'];
+  const f = (key, label) => longFields.includes(key)
+    ? `<div><label>${label}</label><textarea data-${prefix}-f="${key}">${escapeHtml(c[key])}</textarea></div>`
+    : `<div><label>${label}</label><input type="text" data-${prefix}-f="${key}" value="${escapeHtml(c[key])}"></div>`;
   return `
     <div class="grid3" style="margin-bottom:12px;"><div><label>Characteristic No.</label><input type="text" data-${prefix}-f="charNo" value="${escapeHtml(c.charNo)}" style="width:100px;"></div></div>
     <div class="grid2">${f('productChar','Product characteristic')}${f('processChar','Process characteristic')}</div>
@@ -702,22 +729,22 @@ function renderModalCharCards() {
       </div>
       <div class="grid3" style="margin-bottom:12px;"><div><label>No.</label><input type="text" value="${escapeHtml(c.charNo)}" oninput="updateModalChar('${c.key}','charNo',this.value)" style="width:100px;"></div></div>
       <div class="grid2">
-        <div><label>Product characteristic</label><input type="text" value="${escapeHtml(c.productChar)}" oninput="updateModalChar('${c.key}','productChar',this.value)"></div>
-        <div><label>Process characteristic</label><input type="text" value="${escapeHtml(c.processChar)}" oninput="updateModalChar('${c.key}','processChar',this.value)"></div>
+        <div><label>Product characteristic</label><textarea oninput="updateModalChar('${c.key}','productChar',this.value)">${escapeHtml(c.productChar)}</textarea></div>
+        <div><label>Process characteristic</label><textarea oninput="updateModalChar('${c.key}','processChar',this.value)">${escapeHtml(c.processChar)}</textarea></div>
       </div>
       <div class="grid2">
-        <div><label>Spec / Tolerance</label><input type="text" value="${escapeHtml(c.spec)}" oninput="updateModalChar('${c.key}','spec',this.value)"></div>
-        <div><label>Document</label><input type="text" value="${escapeHtml(c.document)}" oninput="updateModalChar('${c.key}','document',this.value)"></div>
-        <div><label>Evaluation</label><input type="text" value="${escapeHtml(c.evaluation)}" oninput="updateModalChar('${c.key}','evaluation',this.value)"></div>
+        <div><label>Spec / Tolerance</label><textarea oninput="updateModalChar('${c.key}','spec',this.value)">${escapeHtml(c.spec)}</textarea></div>
+        <div><label>Document</label><textarea oninput="updateModalChar('${c.key}','document',this.value)">${escapeHtml(c.document)}</textarea></div>
+        <div><label>Evaluation</label><textarea oninput="updateModalChar('${c.key}','evaluation',this.value)">${escapeHtml(c.evaluation)}</textarea></div>
       </div>
       <div class="grid2">
         <div><label>จำนวน</label><input type="text" value="${escapeHtml(c.sampleSize)}" oninput="updateModalChar('${c.key}','sampleSize',this.value)"></div>
         <div><label>ความถี่</label><input type="text" value="${escapeHtml(c.frequency)}" oninput="updateModalChar('${c.key}','frequency',this.value)"></div>
       </div>
       <div class="grid2" style="margin-bottom:0;">
-        <div><label>บันทึกคุณภาพ</label><input type="text" value="${escapeHtml(c.qualityRecord)}" oninput="updateModalChar('${c.key}','qualityRecord',this.value)"></div>
+        <div><label>บันทึกคุณภาพ</label><textarea oninput="updateModalChar('${c.key}','qualityRecord',this.value)">${escapeHtml(c.qualityRecord)}</textarea></div>
         <div><label>Owner</label><input type="text" value="${escapeHtml(c.owner)}" oninput="updateModalChar('${c.key}','owner',this.value)"></div>
-        <div><label>Reaction</label><input type="text" value="${escapeHtml(c.reaction)}" oninput="updateModalChar('${c.key}','reaction',this.value)"></div>
+        <div><label>Reaction</label><textarea oninput="updateModalChar('${c.key}','reaction',this.value)">${escapeHtml(c.reaction)}</textarea></div>
       </div>
     </div>`).join('');
 }
@@ -751,14 +778,14 @@ function renderCpTable() {
   const el = document.getElementById('cp-table-wrap');
   if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Characteristic &mdash; กด "+ สร้าง Characteristic ใหม่"</p>'; return; }
   el.innerHTML = `<table class="data-table"><tr>
-    <th style="width:9%;">Process</th><th style="width:3%;">No.</th><th style="width:12%;">Product char.</th><th style="width:11%;">Process char.</th>
-    <th style="width:8%;">Spec/Tolerance</th><th style="width:7%;">Document</th><th style="width:8%;">Evaluation</th><th style="width:3%;">จำนวน</th>
-    <th style="width:3%;">ความถี่</th><th style="width:7%;">บันทึกคุณภาพ</th><th style="width:5%;">Owner</th><th style="width:8%;">Reaction</th>
+    <th style="width:7%;">Process</th><th style="width:3%;">No.</th><th style="width:13%;">Product char.</th><th style="width:11%;">Process char.</th>
+    <th style="width:8%;">Spec/Tolerance</th><th style="width:6%;">Document</th><th style="width:7%;">Evaluation</th><th style="width:5%;">จำนวน</th>
+    <th style="width:5%;">ความถี่</th><th style="width:7%;">บันทึกคุณภาพ</th><th style="width:5%;">Owner</th><th style="width:7%;">Reaction</th>
     <th style="width:6%;">บันทึก</th><th style="width:10%;"></th>
   </tr>${rows.map(r => `<tr>
-    <td>${escapeHtml(processLabel(r.pid))}</td><td>${escapeHtml(r.charNo)}</td><td>${escapeHtml(r.productChar)}</td><td>${escapeHtml(r.processChar)}</td>
-    <td>${escapeHtml(r.spec)}</td><td>${escapeHtml(r.document)}</td><td>${escapeHtml(r.evaluation)}</td><td>${escapeHtml(r.sampleSize)}</td>
-    <td>${escapeHtml(r.frequency)}</td><td>${escapeHtml(r.qualityRecord)}</td><td>${escapeHtml(r.owner)}</td><td>${escapeHtml(r.reaction)}</td>
+    <td>${escapeHtml(processLabel(r.pid))}</td><td>${escapeHtml(r.charNo)}</td><td>${nl2br(r.productChar)}</td><td>${nl2br(r.processChar)}</td>
+    <td>${nl2br(r.spec)}</td><td>${nl2br(r.document)}</td><td>${nl2br(r.evaluation)}</td><td>${escapeHtml(r.sampleSize)}</td>
+    <td>${escapeHtml(r.frequency)}</td><td>${nl2br(r.qualityRecord)}</td><td>${escapeHtml(r.owner)}</td><td>${nl2br(r.reaction)}</td>
     <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
     <td class="actions-cell">
       <button class="btn btn-icon" onclick="openHistoryModal('processes/${r.pid}/controlPlan/chars/${r.cid}','${escapeHtml(r.charNo)} \u00b7 ${escapeHtml(r.productChar||r.processChar||'')}')" title="ประวัติ">&#128337;</button>
