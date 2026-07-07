@@ -98,10 +98,10 @@ input[type=text], input[type=number], input[type=date], select{
 .card-block-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
 .card-block-head span{font-size:13px; font-weight:700; color:var(--navy);}
 
-table.data-table{width:100%; border-collapse:collapse; font-size:12.5px; table-layout:fixed;}
-table.data-table th, table.data-table td{border:1px solid var(--line); padding:7px 9px; text-align:left; vertical-align:top; word-break:break-word; overflow-wrap:break-word;}
+table.data-table{width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed;}
+table.data-table th, table.data-table td{border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; word-break:break-word; overflow-wrap:break-word; line-height:1.4;}
 table.data-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; position:sticky; top:0;}
-table.data-table td.actions-cell{white-space:nowrap; width:1%;}
+table.data-table td.actions-cell{white-space:nowrap;}
 table.mini-table{width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:4px;}
 table.mini-table th, table.mini-table td{border:1px solid var(--line); padding:5px 7px; text-align:left;}
 table.mini-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
@@ -140,6 +140,7 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
         <button class="tab-btn active" id="tab-btn-overview" onclick="switchTab('overview')">Process Overview</button>
         <button class="tab-btn" id="tab-btn-fmea" onclick="switchTab('fmea')">FMEA</button>
         <button class="tab-btn" id="tab-btn-cp" onclick="switchTab('cp')">Control Plan</button>
+        <button class="tab-btn" id="tab-btn-flow" onclick="switchTab('flow')">Process Flow</button>
       </div>
     </div>
   </div>
@@ -206,6 +207,17 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
     <div class="table-scroll" id="cp-table-wrap"><p class="empty-state">ยังไม่มี Characteristic</p></div>
   </div>
 
+  <!-- ===== TAB: PROCESS FLOW ===== -->
+  <div id="tab-flow" class="hidden">
+    <div class="row-between" style="margin-bottom:0;">
+      <div>
+        <div style="font-size:17px; font-weight:700; color:var(--navy);">Process Flow</div>
+        <div class="page-desc" style="margin:2px 0 0;">แผนภาพความสัมพันธ์ระหว่าง Process อัปเดตอัตโนมัติตามข้อมูลจริง &mdash; เขียว-ฟ้า = มี Control Plan แล้ว, ส้ม = มี FMEA แต่ยังไม่มี Control Plan, เทา = ยังไม่มีอะไรเลย</div>
+      </div>
+    </div>
+    <div class="panel" id="flow-diagram-wrap"><p class="empty-state">ยังไม่มี Process หรือยังไม่ได้เชื่อมความสัมพันธ์ &mdash; ไปที่ Process Overview แล้วกดแก้ไข Process เพื่อกำหนดว่า "ต่อไปยัง Process ไหน"</p></div>
+  </div>
+
 </div>
 
 <!-- ===== MODAL ===== -->
@@ -216,6 +228,9 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getDatabase, ref, push, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+mermaid.initialize({ startOnLoad: false, theme: 'base', flowchart: { curve: 'basis' } });
 
 const firebaseConfig = {
   apiKey: "AIzaSyBJ0K5-stmSMGdSHE13BlDt_Qi6djgFqT4",
@@ -255,6 +270,7 @@ onValue(ref(db, 'processes'), snap => {
   renderProcessList();
   renderFmeaTable();
   renderCpTable();
+  if (currentTab === 'flow') renderFlowTab();
 });
 
 function sortedProcessIds() {
@@ -266,10 +282,11 @@ function processLabel(pid) { const p = allProcesses[pid]; return p ? (p.processN
 
 function switchTab(tab) {
   currentTab = tab;
-  ['overview','fmea','cp'].forEach(t => {
+  ['overview','fmea','cp','flow'].forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
     document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
   });
+  if (tab === 'flow') renderFlowTab();
 }
 
 // ---------- Generic modal ----------
@@ -281,10 +298,18 @@ function processOptionsHtml(selectedId) {
 
 // ================= PROCESS OVERVIEW =================
 let modalPoTools = [];
+let modalPoNext = {};
 function openProcessModal(pid) {
   const p = pid ? allProcesses[pid] : null;
   modalPoTools = p ? Object.entries(p.tools || {}).map(([k,v]) => ({key:k, value:v})) : [{key:uid(), value:''}];
   if (!modalPoTools.length) modalPoTools = [{key:uid(), value:''}];
+  modalPoNext = p ? {...(p.nextProcessIds || {})} : {};
+  const otherProcesses = sortedProcessIds().filter(id => id !== pid);
+  const nextChecklistHtml = otherProcesses.length ? otherProcesses.map(id => `
+    <label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-size:13px; font-weight:400; cursor:pointer;">
+      <input type="checkbox" data-nextid="${id}" ${modalPoNext[id] ? 'checked' : ''} onchange="toggleModalNext('${id}', this.checked)">
+      ${escapeHtml(processLabel(id))}
+    </label>`).join('') : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Process อื่นให้เลือก</p>';
   showModal(`
     <h2>${p ? 'แก้ไข Process' : 'สร้าง Process ใหม่'}</h2>
     <div class="grid3">
@@ -294,6 +319,8 @@ function openProcessModal(pid) {
     <h3>M/C, JIG, Tool ที่ใช้</h3>
     <div id="mpo-tool-rows"></div>
     <button class="btn btn-sm btn-ghost" onclick="addModalTool()">+ เพิ่มเครื่องมือ</button>
+    <h3>ต่อไปยัง Process ไหนบ้าง (เลือกได้หลายอัน)</h3>
+    <div id="mpo-next-list" style="max-height:200px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; padding:8px 12px;">${nextChecklistHtml}</div>
     <div class="row-between" style="margin-top:16px; margin-bottom:0;">
       <a class="back-link" onclick="closeModal()">ยกเลิก</a>
       <button class="btn btn-primary" onclick="saveProcessModal('${pid||''}')">${p?'บันทึกการแก้ไข':'สร้าง Process'}</button>
@@ -301,6 +328,7 @@ function openProcessModal(pid) {
   `);
   renderModalToolRows();
 }
+function toggleModalNext(id, checked) { if (checked) modalPoNext[id] = true; else delete modalPoNext[id]; }
 function renderModalToolRows() {
   document.getElementById('mpo-tool-rows').innerHTML = modalPoTools.map(t => `
     <div class="tool-row">
@@ -319,10 +347,10 @@ function saveProcessModal(pid) {
   const toolsObj = {};
   modalPoTools.forEach(t => { if (t.value.trim()) toolsObj[t.key] = t.value.trim(); });
   if (pid) {
-    update(ref(db, 'processes/' + pid), { processNo, processName, tools: toolsObj }).then(closeModal);
+    update(ref(db, 'processes/' + pid), { processNo, processName, tools: toolsObj, nextProcessIds: modalPoNext }).then(closeModal);
   } else {
     const newRef = push(ref(db, 'processes'));
-    set(newRef, { processNo, processName, tools: toolsObj, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(closeModal);
+    set(newRef, { processNo, processName, tools: toolsObj, nextProcessIds: modalPoNext, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(closeModal);
   }
 }
 function deleteProcess(pid) {
@@ -525,16 +553,17 @@ function renderFmeaTable() {
   if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Failure Mode &mdash; กด "+ สร้าง Failure Mode ใหม่"</p>'; return; }
   const apCls = ap => ap === 'H' ? 'badge-coral' : (ap === 'M' ? 'badge-amber' : 'badge-slate');
   el.innerHTML = `<table class="data-table"><tr>
-    <th style="width:5%;">No.</th><th style="width:14%;">Process</th><th style="width:16%;">Failure Mode</th><th style="width:16%;">Effect</th>
-    <th style="width:4%;">S</th><th style="width:4%;">O</th><th style="width:4%;">D</th><th style="width:5%;">AP</th>
-    <th style="width:12%;">Responsible</th><th style="width:8%;">Status</th><th style="width:8%;">บันทึก</th><th></th>
+    <th style="width:9%;">Process</th><th style="width:4%;">No.</th><th style="width:11%;">Failure Mode</th><th style="width:11%;">Effect</th>
+    <th style="width:3%;">S</th><th style="width:11%;">Cause</th><th style="width:3%;">O</th>
+    <th style="width:11%;">Prevention</th><th style="width:11%;">Detection Control</th><th style="width:3%;">D</th><th style="width:4%;">AP</th>
+    <th style="width:11%;">บันทึก</th><th style="width:8%;"></th>
   </tr>${rows.map(r => `<tr>
-    <td>${escapeHtml(r.fmNo)}</td>
     <td>${escapeHtml(processLabel(r.pid))}</td>
+    <td>${escapeHtml(r.fmNo)}</td>
     <td>${escapeHtml(r.failureMode)}</td><td>${escapeHtml(r.effect)}</td>
-    <td>${escapeHtml(r.severity)}</td><td>${escapeHtml(r.occurrence)}</td><td>${escapeHtml(r.detection)}</td>
+    <td>${escapeHtml(r.severity)}</td><td>${escapeHtml(r.cause)}</td><td>${escapeHtml(r.occurrence)}</td>
+    <td>${escapeHtml(r.prevention)}</td><td>${escapeHtml(r.detectionControl)}</td><td>${escapeHtml(r.detection)}</td>
     <td><span class="badge ${apCls(r.ap)}">${escapeHtml(r.ap)}</span></td>
-    <td>${escapeHtml(r.responsible)}</td><td>${escapeHtml(r.status)}</td>
     <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
     <td class="actions-cell">
       <button class="btn btn-icon" onclick="openHistoryModal('processes/${r.pid}/fmea/${r.fmId}','${escapeHtml(r.failureMode)}')" title="ประวัติ">&#128337;</button>
@@ -720,7 +749,10 @@ function renderCpTable() {
   const el = document.getElementById('cp-table-wrap');
   if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Characteristic &mdash; กด "+ สร้าง Characteristic ใหม่"</p>'; return; }
   el.innerHTML = `<table class="data-table"><tr>
-    <th>Process</th><th>No.</th><th>Product char.</th><th>Process char.</th><th>Spec/Tolerance</th><th>Document</th><th>Evaluation</th><th>จำนวน</th><th>ความถี่</th><th>บันทึกคุณภาพ</th><th>Owner</th><th>Reaction</th><th>บันทึก</th><th></th>
+    <th style="width:8%;">Process</th><th style="width:3%;">No.</th><th style="width:10%;">Product char.</th><th style="width:10%;">Process char.</th>
+    <th style="width:9%;">Spec/Tolerance</th><th style="width:8%;">Document</th><th style="width:9%;">Evaluation</th><th style="width:4%;">จำนวน</th>
+    <th style="width:4%;">ความถี่</th><th style="width:8%;">บันทึกคุณภาพ</th><th style="width:6%;">Owner</th><th style="width:9%;">Reaction</th>
+    <th style="width:6%;">บันทึก</th><th style="width:6%;"></th>
   </tr>${rows.map(r => `<tr>
     <td>${escapeHtml(processLabel(r.pid))}</td><td>${escapeHtml(r.charNo)}</td><td>${escapeHtml(r.productChar)}</td><td>${escapeHtml(r.processChar)}</td>
     <td>${escapeHtml(r.spec)}</td><td>${escapeHtml(r.document)}</td><td>${escapeHtml(r.evaluation)}</td><td>${escapeHtml(r.sampleSize)}</td>
@@ -783,10 +815,52 @@ function exportCombined() {
   buildControlPlanSheet(checked, 'ControlPlan_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
 }
 
+// ================= PROCESS FLOW (Mermaid) =================
+function mermaidNodeId(pid) { return 'p' + pid.replace(/[^a-zA-Z0-9]/g, '_'); }
+async function renderFlowTab() {
+  const ids = sortedProcessIds();
+  const el = document.getElementById('flow-diagram-wrap');
+  if (!ids.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Process</p>'; return; }
+  const lines = ['flowchart LR'];
+  ids.forEach(id => {
+    const p = allProcesses[id];
+    const label = escapeHtml(p.processNo) + ' &middot; ' + escapeHtml(p.processName);
+    lines.push(`  ${mermaidNodeId(id)}["${label}"]`);
+  });
+  let edgeCount = 0;
+  ids.forEach(id => {
+    const next = allProcesses[id].nextProcessIds || {};
+    Object.keys(next).forEach(targetId => {
+      if (allProcesses[targetId]) { lines.push(`  ${mermaidNodeId(id)} --> ${mermaidNodeId(targetId)}`); edgeCount++; }
+    });
+  });
+  lines.push('  classDef hasCp fill:#E1F1EE,stroke:#2A9D8F,color:#1D7468;');
+  lines.push('  classDef hasFmeaOnly fill:#FBEEE0,stroke:#E8954B,color:#A85F22;');
+  lines.push('  classDef noData fill:#EBEFF2,stroke:#94A2AF,color:#5C6B79;');
+  ids.forEach(id => {
+    const p = allProcesses[id];
+    const hasCp = Object.keys(p.controlPlan?.chars || {}).length > 0;
+    const hasFmea = Object.keys(p.fmea || {}).length > 0;
+    const cls = hasCp ? 'hasCp' : (hasFmea ? 'hasFmeaOnly' : 'noData');
+    lines.push(`  class ${mermaidNodeId(id)} ${cls}`);
+  });
+  if (!edgeCount) {
+    el.innerHTML = '<p class="empty-state">ยังไม่ได้เชื่อมความสัมพันธ์ระหว่าง Process &mdash; ไปที่ Process Overview แล้วกดแก้ไข Process เพื่อกำหนดว่า "ต่อไปยัง Process ไหน"</p>';
+    return;
+  }
+  try {
+    const { svg } = await mermaid.render('flow-svg-' + Date.now(), lines.join('\n'));
+    el.innerHTML = svg;
+  } catch (e) {
+    el.innerHTML = '<p class="empty-state">เกิดข้อผิดพลาดในการวาดแผนภาพ: ' + escapeHtml(e.message || String(e)) + '</p>';
+  }
+}
+
 window.promptUserName = promptUserName;
 window.switchTab = switchTab;
 window.closeModal = closeModal;
 window.openProcessModal = openProcessModal;
+window.toggleModalNext = toggleModalNext;
 window.addModalTool = addModalTool;
 window.removeModalTool = removeModalTool;
 window.updateModalTool = updateModalTool;
