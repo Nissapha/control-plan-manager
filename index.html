@@ -104,6 +104,10 @@ table.mini-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; 
 .empty-state .es-title{font-weight:700; color:var(--navy); font-size:14px; margin-bottom:4px;}
 a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:none; font-weight:600;}
 .note{font-size:12px; color:#A85F22; background:var(--amber-soft); border-radius:8px; padding:8px 12px; margin:0 0 12px;}
+.history-panel{background:#FAFCFD; border:1px solid var(--line-soft); border-radius:8px; padding:8px 12px; margin:6px 0 10px;}
+.log-item{font-size:12px; color:var(--ink-soft); padding:6px 0; border-bottom:1px solid var(--line-soft);}
+.log-item:last-child{border-bottom:none;}
+.log-item b{color:var(--ink);}
 .export-picker-row{display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--line-soft);}
 .export-picker-row:last-child{border-bottom:none;}
 </style>
@@ -292,6 +296,46 @@ let currentProcessId = null;
 let expandedProcesses = {};
 let editingFmId = null;
 let editingCharId = null;
+let expandedFmLog = {};
+let expandedCharLog = {};
+
+const FM_LABELS = {
+  failureMode:'Potential Failure Mode', effect:'Potential Effect(s)', severity:'Severity (S)',
+  cause:'Potential Cause(s)', occurrence:'Occurrence (O)', prevention:'Current Prevention Control',
+  detectionControl:'Current Detection Control', detection:'Detection (D)', ap:'Action Priority (AP)',
+  recommendedAction:'Recommended Action', responsible:'Responsible', targetDate:'Target date', status:'Status'
+};
+const CHAR_LABELS = {
+  charNo:'Characteristic No.', productChar:'Product characteristic', processChar:'Process characteristic',
+  spec:'Spec / Tolerance', document:'Document', evaluation:'Evaluation', sampleSize:'จำนวน',
+  frequency:'ความถี่', qualityRecord:'บันทึกคุณภาพ', owner:'Owner', reaction:'Reaction'
+};
+function diffFields(oldObj, newObj, labels) {
+  const changes = [];
+  Object.keys(labels).forEach(key => {
+    const oldVal = (oldObj?.[key] ?? '').toString();
+    const newVal = (newObj?.[key] ?? '').toString();
+    if (oldVal !== newVal) changes.push({ field: labels[key], oldVal, newVal });
+  });
+  return changes;
+}
+function pushLog(path, entry) { const logRef = push(ref(db, path)); set(logRef, entry); }
+function renderLogEntries(logObj) {
+  const ids = Object.keys(logObj || {});
+  if (!ids.length) return '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มีประวัติ</p>';
+  ids.sort((a,b) => (logObj[b].at||0) - (logObj[a].at||0));
+  return ids.map(id => {
+    const l = logObj[id];
+    const actionLabel = l.action === 'created' ? 'สร้างรายการ' : 'แก้ไข';
+    let changesHtml = '';
+    if (l.changes && l.changes.length) {
+      changesHtml = '<ul style="margin:4px 0 0; padding-left:18px;">' + l.changes.map(c => `<li>${escapeHtml(c.field)}: "${escapeHtml(c.oldVal)}" &rarr; "${escapeHtml(c.newVal)}"</li>`).join('') + '</ul>';
+    }
+    return `<div class="log-item"><b>${actionLabel}</b> โดย ${escapeHtml(l.by)} \u00b7 ${formatTime(l.at)}${changesHtml}</div>`;
+  }).join('');
+}
+function toggleFmLog(id) { expandedFmLog[id] = !expandedFmLog[id]; renderFmeaView(); }
+function toggleCharLog(id) { expandedCharLog[id] = !expandedCharLog[id]; renderCpView(); }
 
 onValue(ref(db, 'processes'), snap => {
   allProcesses = snap.val() || {};
@@ -467,12 +511,20 @@ function saveFailureMode() {
     status: document.getElementById('fm-status').value
   };
   if (editingFmId) {
+    const old = allProcesses[currentProcessId].fmea[editingFmId];
+    const changes = diffFields(old, fm, FM_LABELS);
     fm.updatedBy = userName || 'ไม่ระบุชื่อ'; fm.updatedAt = Date.now();
-    update(ref(db, 'processes/' + currentProcessId + '/fmea/' + editingFmId), fm).then(() => cancelFmEdit());
+    update(ref(db, 'processes/' + currentProcessId + '/fmea/' + editingFmId), fm).then(() => {
+      if (changes.length) pushLog('processes/' + currentProcessId + '/fmea/' + editingFmId + '/log', { action: 'edited', by: userName || 'ไม่ระบุชื่อ', at: Date.now(), changes });
+      cancelFmEdit();
+    });
   } else {
     fm.enteredBy = userName || 'ไม่ระบุชื่อ'; fm.enteredAt = Date.now();
     const newRef = push(ref(db, 'processes/' + currentProcessId + '/fmea'));
-    set(newRef, fm).then(() => resetFmForm());
+    set(newRef, fm).then(() => {
+      pushLog('processes/' + currentProcessId + '/fmea/' + newRef.key + '/log', { action: 'created', by: userName || 'ไม่ระบุชื่อ', at: Date.now() });
+      resetFmForm();
+    });
   }
 }
 function renderFmeaView() {
@@ -488,16 +540,21 @@ function renderFmeaView() {
   const apCls = ap => ap === 'H' ? 'badge-coral' : (ap === 'M' ? 'badge-amber' : 'badge-slate');
   el.innerHTML = ids.map(id => {
     const f = fms[id];
-    return `<div class="list-item">
+    const logCount = Object.keys(f.log || {}).length;
+    return `<div>
+    <div class="list-item">
       <div>
         <p style="margin:0; font-weight:600;">${escapeHtml(f.failureMode)} &rarr; ${escapeHtml(f.effect || '-')}</p>
         <p class="meta">S:${escapeHtml(f.severity||'-')} O:${escapeHtml(f.occurrence||'-')} D:${escapeHtml(f.detection||'-')} \u00b7 ${escapeHtml(f.recommendedAction || 'ไม่มีมาตรการเพิ่มเติม')} \u00b7 ${whoWhen(f)}</p>
       </div>
       <div class="actions">
         <span class="badge ${apCls(f.ap)}" style="cursor:default;">AP: ${escapeHtml(f.ap)}</span>
+        <button class="btn btn-sm btn-ghost" onclick="toggleFmLog('${id}')">ประวัติ (${logCount})</button>
         <button class="btn btn-icon" onclick="editFailureMode('${id}')" title="แก้ไข">&#9998;</button>
         <button class="btn btn-icon btn-danger" onclick="deleteFailureMode('${id}')" title="ลบ">&times;</button>
       </div>
+    </div>
+    ${expandedFmLog[id] ? `<div class="history-panel">${renderLogEntries(f.log)}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -552,7 +609,10 @@ function saveCharacteristics() {
       enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
     };
   });
-  update(ref(db), updates).then(() => resetCpForm());
+  update(ref(db), updates).then(() => {
+    cpChars.forEach(c => pushLog('processes/' + currentProcessId + '/controlPlan/chars/' + c.key + '/log', { action: 'created', by: userName || 'ไม่ระบุชื่อ', at: Date.now() }));
+    resetCpForm();
+  });
 }
 function deleteChar(cid) {
   if (!confirm('ลบ Characteristic นี้หรือไม่?')) return;
@@ -565,13 +625,18 @@ function saveCharEdit(cid) {
   promptUserName(false);
   const row = document.querySelector('[data-editrow="' + cid + '"]');
   const get = f => row.querySelector('[data-f="' + f + '"]').value.trim();
+  const old = allProcesses[currentProcessId].controlPlan.chars[cid];
   const updated = {
     charNo: get('charNo'), productChar: get('productChar'), processChar: get('processChar'), spec: get('spec'),
     document: get('document'), evaluation: get('evaluation'), sampleSize: get('sampleSize'), frequency: get('frequency'),
-    qualityRecord: get('qualityRecord'), owner: get('owner'), reaction: get('reaction'),
-    updatedBy: userName || 'ไม่ระบุชื่อ', updatedAt: Date.now()
+    qualityRecord: get('qualityRecord'), owner: get('owner'), reaction: get('reaction')
   };
-  update(ref(db, 'processes/' + currentProcessId + '/controlPlan/chars/' + cid), updated).then(() => { editingCharId = null; });
+  const changes = diffFields(old, updated, CHAR_LABELS);
+  updated.updatedBy = userName || 'ไม่ระบุชื่อ'; updated.updatedAt = Date.now();
+  update(ref(db, 'processes/' + currentProcessId + '/controlPlan/chars/' + cid), updated).then(() => {
+    if (changes.length) pushLog('processes/' + currentProcessId + '/controlPlan/chars/' + cid + '/log', { action: 'edited', by: userName || 'ไม่ระบุชื่อ', at: Date.now(), changes });
+    editingCharId = null;
+  });
 }
 function charEditRowHtml(cid, c) {
   const f = (key, label) => `<div><label>${label}</label><input type="text" data-f="${key}" value="${escapeHtml(c[key])}"></div>`;
@@ -598,15 +663,20 @@ function renderCpView() {
   if (!chars.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Characteristic</p>'; return; }
   el.innerHTML = chars.map(([k,c]) => {
     if (editingCharId === k) return charEditRowHtml(k, c);
-    return `<div class="list-item">
+    const logCount = Object.keys(c.log || {}).length;
+    return `<div>
+    <div class="list-item">
       <div>
         <p style="margin:0;"><b>${escapeHtml(c.charNo)}</b> &middot; ${escapeHtml(c.productChar || c.processChar || '(ไม่ระบุชื่อ)')}</p>
         <p class="meta">Spec: ${escapeHtml(c.spec || '-')} \u00b7 ${whoWhen(c)}</p>
       </div>
       <div class="actions">
+        <button class="btn btn-sm btn-ghost" onclick="toggleCharLog('${k}')">ประวัติ (${logCount})</button>
         <button class="btn btn-icon" onclick="editChar('${k}')" title="แก้ไข">&#9998;</button>
         <button class="btn btn-icon btn-danger" onclick="deleteChar('${k}')" title="ลบ">&times;</button>
       </div>
+    </div>
+    ${expandedCharLog[k] ? `<div class="history-panel">${renderLogEntries(c.log)}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -679,6 +749,8 @@ window.deleteProcess = deleteProcess;
 window.toggleExpand = toggleExpand;
 window.editFailureMode = editFailureMode;
 window.deleteFailureMode = deleteFailureMode;
+window.toggleFmLog = toggleFmLog;
+window.toggleCharLog = toggleCharLog;
 window.cancelFmEdit = cancelFmEdit;
 window.saveFailureMode = saveFailureMode;
 window.addCharCard = addCharCard;
