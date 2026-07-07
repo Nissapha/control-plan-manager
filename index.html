@@ -98,10 +98,10 @@ input[type=text], input[type=number], input[type=date], select{
 .card-block-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
 .card-block-head span{font-size:13px; font-weight:700; color:var(--navy);}
 
-table.data-table{width:100%; border-collapse:collapse; font-size:12.5px;}
-table.data-table th, table.data-table td{border:1px solid var(--line); padding:7px 9px; text-align:left; vertical-align:top;}
-table.data-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; white-space:nowrap; position:sticky; top:0;}
-table.data-table td.actions-cell{white-space:nowrap;}
+table.data-table{width:100%; border-collapse:collapse; font-size:12.5px; table-layout:fixed;}
+table.data-table th, table.data-table td{border:1px solid var(--line); padding:7px 9px; text-align:left; vertical-align:top; word-break:break-word; overflow-wrap:break-word;}
+table.data-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; position:sticky; top:0;}
+table.data-table td.actions-cell{white-space:nowrap; width:1%;}
 table.mini-table{width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:4px;}
 table.mini-table th, table.mini-table td{border:1px solid var(--line); padding:5px 7px; text-align:left;}
 table.mini-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
@@ -162,6 +162,18 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
   <!-- ===== TAB: FMEA ===== -->
   <div id="tab-fmea" class="hidden">
     <div class="note">ช่อง AP (Action Priority) ให้เลือกเองก่อน (H/M/L) รอตาราง AIAG-VDA ที่ยืนยันแล้วมาเชื่อมคำนวณอัตโนมัติทีหลัง</div>
+    <div class="panel">
+      <div class="row-between" style="margin-bottom:0;">
+        <h2 style="margin:0;">Export FMEA สำหรับสินค้า</h2>
+        <button class="btn btn-ghost btn-sm" onclick="toggleFmeaExportPicker()">เลือก Process เพื่อ Export</button>
+      </div>
+      <div id="fmea-export-picker" class="hidden" style="margin-top:12px;">
+        <div class="grid3"><div><label>Part No.</label><input type="text" id="fep-partno" placeholder="เช่น MFC-96B-A"></div></div>
+        <h3>ติ๊กเลือก Process</h3>
+        <div id="fmea-export-process-checklist"></div>
+        <div style="text-align:right; margin-top:12px;"><button class="btn btn-primary" onclick="exportFmeaExcel()">Export เป็น Excel</button></div>
+      </div>
+    </div>
     <div class="row-between">
       <div style="font-size:17px; font-weight:700; color:var(--navy);">FMEA ทั้งหมด</div>
       <button class="btn btn-primary" onclick="openFmeaModal()">+ สร้าง Failure Mode ใหม่</button>
@@ -330,8 +342,8 @@ function renderProcessList() {
     const expanded = !!expandedProcesses[id];
     let expandHtml = '';
     if (expanded) {
-      const fms = Object.values(p.fmea || {});
-      const fmTable = fms.length ? `<table class="mini-table"><tr><th>Failure Mode</th><th>Effect</th><th>S</th><th>Cause</th><th>O</th><th>Prevention</th><th>Detection Control</th><th>D</th><th>AP</th><th>Recommended Action</th><th>Responsible</th><th>Target date</th><th>Status</th></tr>${fms.map(f => `<tr><td>${escapeHtml(f.failureMode)}</td><td>${escapeHtml(f.effect)}</td><td>${escapeHtml(f.severity)}</td><td>${escapeHtml(f.cause)}</td><td>${escapeHtml(f.occurrence)}</td><td>${escapeHtml(f.prevention)}</td><td>${escapeHtml(f.detectionControl)}</td><td>${escapeHtml(f.detection)}</td><td>${escapeHtml(f.ap)}</td><td>${escapeHtml(f.recommendedAction)}</td><td>${escapeHtml(f.responsible)}</td><td>${escapeHtml(f.targetDate)}</td><td>${escapeHtml(f.status)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Mode</p>';
+      const fms = Object.values(p.fmea || {}).sort((a,b) => (parseFloat(a.fmNo)||0) - (parseFloat(b.fmNo)||0));
+      const fmTable = fms.length ? `<table class="mini-table"><tr><th>No.</th><th>Failure Mode</th><th>Effect</th><th>S</th><th>Cause</th><th>O</th><th>Prevention</th><th>Detection Control</th><th>D</th><th>AP</th><th>Recommended Action</th><th>Responsible</th><th>Target date</th><th>Status</th></tr>${fms.map(f => `<tr><td>${escapeHtml(f.fmNo)}</td><td>${escapeHtml(f.failureMode)}</td><td>${escapeHtml(f.effect)}</td><td>${escapeHtml(f.severity)}</td><td>${escapeHtml(f.cause)}</td><td>${escapeHtml(f.occurrence)}</td><td>${escapeHtml(f.prevention)}</td><td>${escapeHtml(f.detectionControl)}</td><td>${escapeHtml(f.detection)}</td><td>${escapeHtml(f.ap)}</td><td>${escapeHtml(f.recommendedAction)}</td><td>${escapeHtml(f.responsible)}</td><td>${escapeHtml(f.targetDate)}</td><td>${escapeHtml(f.status)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Mode</p>';
       const chars = Object.values(p.controlPlan?.chars || {}).sort((a,b) => parseFloat(a.charNo||0) - parseFloat(b.charNo||0));
       const chTable = chars.length ? `<table class="mini-table"><tr><th>No.</th><th>Product char.</th><th>Process char.</th><th>Spec</th><th>Document</th><th>Evaluation</th><th>จำนวน</th><th>ความถี่</th><th>บันทึกคุณภาพ</th><th>Owner</th><th>Reaction</th></tr>${chars.map(c => `<tr><td>${escapeHtml(c.charNo)}</td><td>${escapeHtml(c.productChar)}</td><td>${escapeHtml(c.processChar)}</td><td>${escapeHtml(c.spec)}</td><td>${escapeHtml(c.document)}</td><td>${escapeHtml(c.evaluation)}</td><td>${escapeHtml(c.sampleSize)}</td><td>${escapeHtml(c.frequency)}</td><td>${escapeHtml(c.qualityRecord)}</td><td>${escapeHtml(c.owner)}</td><td>${escapeHtml(c.reaction)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Characteristic</p>';
       expandHtml = `<div class="expand-area"><h4>FMEA</h4>${fmTable}<h4>Control Plan</h4>${chTable}</div>`;
@@ -391,17 +403,26 @@ function getByPath(path) {
 
 // ================= FMEA (global tab) =================
 const FM_LABELS = {
-  failureMode:'Potential Failure Mode', effect:'Potential Effect(s)', severity:'Severity (S)',
+  fmNo:'Failure Mode No.', failureMode:'Potential Failure Mode', effect:'Potential Effect(s)', severity:'Severity (S)',
   cause:'Potential Cause(s)', occurrence:'Occurrence (O)', prevention:'Current Prevention Control',
   detectionControl:'Current Detection Control', detection:'Detection (D)', ap:'Action Priority (AP)',
   recommendedAction:'Recommended Action', responsible:'Responsible', targetDate:'Target date', status:'Status'
 };
+function nextFmNoFor(pid) {
+  const fms = allProcesses[pid]?.fmea || {};
+  const nums = Object.values(fms).map(f => parseFloat(f.fmNo) || 0);
+  return (nums.length ? Math.max(...nums) : 0) + 1;
+}
 function flattenFmea() {
   const rows = [];
   Object.keys(allProcesses).forEach(pid => {
     Object.entries(allProcesses[pid].fmea || {}).forEach(([fmId, f]) => rows.push({ pid, fmId, ...f }));
   });
-  rows.sort((a,b) => activityTime(b) - activityTime(a));
+  rows.sort((a,b) => {
+    const pDiff = (parseFloat(allProcesses[a.pid]?.processNo)||0) - (parseFloat(allProcesses[b.pid]?.processNo)||0);
+    if (pDiff !== 0) return pDiff;
+    return (parseFloat(a.fmNo)||0) - (parseFloat(b.fmNo)||0);
+  });
   return rows;
 }
 function openFmeaModal(pid, fmId) {
@@ -410,7 +431,8 @@ function openFmeaModal(pid, fmId) {
   showModal(`
     <h2>${isEdit ? 'แก้ไข Potential Failure Mode' : 'สร้าง Potential Failure Mode ใหม่'}</h2>
     ${isEdit ? `<p style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">Process: <b>${escapeHtml(processLabel(pid))}</b></p>`
-              : `<div style="margin-bottom:12px;"><label>เลือก Process</label><select id="mfm-process">${processOptionsHtml(pid)}</select></div>`}
+              : `<div style="margin-bottom:12px;"><label>เลือก Process</label><select id="mfm-process" onchange="onFmeaModalProcessChange()">${processOptionsHtml(pid)}</select></div>`}
+    <div class="grid3" style="margin-bottom:12px;"><div><label>Failure Mode No.</label><input type="text" id="mfm-fmno" value="${f?escapeHtml(f.fmNo):nextFmNoFor(pid||sortedProcessIds()[0])}" style="width:100px;"></div></div>
     <h3>ความล้มเหลวและผลกระทบ</h3>
     <div class="grid2">
       <div><label>Potential Failure Mode</label><input type="text" id="mfm-failuremode" value="${f?escapeHtml(f.failureMode):''}"></div>
@@ -452,6 +474,9 @@ function openFmeaModal(pid, fmId) {
     </div>
   `);
 }
+function onFmeaModalProcessChange() {
+  document.getElementById('mfm-fmno').value = nextFmNoFor(document.getElementById('mfm-process').value);
+}
 function saveFmeaModal(pid, fmId) {
   const failureMode = document.getElementById('mfm-failuremode').value.trim();
   if (!failureMode) { alert('กรอก Potential Failure Mode ก่อนนะครับ'); return; }
@@ -459,6 +484,7 @@ function saveFmeaModal(pid, fmId) {
   if (!targetPid) { alert('เลือก Process ก่อนนะครับ'); return; }
   promptUserName(false);
   const fm = {
+    fmNo: document.getElementById('mfm-fmno').value.trim(),
     failureMode, effect: document.getElementById('mfm-effect').value.trim(),
     severity: document.getElementById('mfm-severity').value.trim(),
     cause: document.getElementById('mfm-cause').value.trim(),
@@ -499,21 +525,63 @@ function renderFmeaTable() {
   if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Failure Mode &mdash; กด "+ สร้าง Failure Mode ใหม่"</p>'; return; }
   const apCls = ap => ap === 'H' ? 'badge-coral' : (ap === 'M' ? 'badge-amber' : 'badge-slate');
   el.innerHTML = `<table class="data-table"><tr>
-    <th>Process</th><th>Failure Mode</th><th>Effect</th><th>S</th><th>Cause</th><th>O</th><th>Prevention</th><th>Detection Control</th><th>D</th><th>AP</th><th>Recommended Action</th><th>Responsible</th><th>Target date</th><th>Status</th><th>บันทึก</th><th></th>
+    <th style="width:5%;">No.</th><th style="width:14%;">Process</th><th style="width:16%;">Failure Mode</th><th style="width:16%;">Effect</th>
+    <th style="width:4%;">S</th><th style="width:4%;">O</th><th style="width:4%;">D</th><th style="width:5%;">AP</th>
+    <th style="width:12%;">Responsible</th><th style="width:8%;">Status</th><th style="width:8%;">บันทึก</th><th></th>
   </tr>${rows.map(r => `<tr>
+    <td>${escapeHtml(r.fmNo)}</td>
     <td>${escapeHtml(processLabel(r.pid))}</td>
-    <td>${escapeHtml(r.failureMode)}</td><td>${escapeHtml(r.effect)}</td><td>${escapeHtml(r.severity)}</td>
-    <td>${escapeHtml(r.cause)}</td><td>${escapeHtml(r.occurrence)}</td><td>${escapeHtml(r.prevention)}</td>
-    <td>${escapeHtml(r.detectionControl)}</td><td>${escapeHtml(r.detection)}</td>
+    <td>${escapeHtml(r.failureMode)}</td><td>${escapeHtml(r.effect)}</td>
+    <td>${escapeHtml(r.severity)}</td><td>${escapeHtml(r.occurrence)}</td><td>${escapeHtml(r.detection)}</td>
     <td><span class="badge ${apCls(r.ap)}">${escapeHtml(r.ap)}</span></td>
-    <td>${escapeHtml(r.recommendedAction)}</td><td>${escapeHtml(r.responsible)}</td><td>${escapeHtml(r.targetDate)}</td><td>${escapeHtml(r.status)}</td>
+    <td>${escapeHtml(r.responsible)}</td><td>${escapeHtml(r.status)}</td>
     <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
     <td class="actions-cell">
       <button class="btn btn-icon" onclick="openHistoryModal('processes/${r.pid}/fmea/${r.fmId}','${escapeHtml(r.failureMode)}')" title="ประวัติ">&#128337;</button>
-      <button class="btn btn-icon" onclick="openFmeaModal('${r.pid}','${r.fmId}')" title="แก้ไข">&#9998;</button>
+      <button class="btn btn-icon" onclick="openFmeaModal('${r.pid}','${r.fmId}')" title="แก้ไข / ดูรายละเอียด">&#9998;</button>
       <button class="btn btn-icon btn-danger" onclick="deleteFailureMode('${r.pid}','${r.fmId}')" title="ลบ">&times;</button>
     </td>
   </tr>`).join('')}</table>`;
+}
+
+// ---------- FMEA export ----------
+function toggleFmeaExportPicker() {
+  const el = document.getElementById('fmea-export-picker');
+  el.classList.toggle('hidden');
+  if (!el.classList.contains('hidden')) renderFmeaExportChecklist();
+}
+function renderFmeaExportChecklist() {
+  const ids = sortedProcessIds();
+  document.getElementById('fmea-export-process-checklist').innerHTML = ids.map(id => {
+    const p = allProcesses[id];
+    const n = Object.keys(p.fmea || {}).length;
+    return `<div class="export-picker-row"><input type="checkbox" data-pid="${id}" ${n?'':'disabled'}><span>${escapeHtml(p.processNo)} \u00b7 ${escapeHtml(p.processName)} ${n?'('+n+' failure mode)':'(ยังไม่มี Failure Mode)'}</span></div>`;
+  }).join('');
+}
+function exportFmeaExcel() {
+  const checked = Array.from(document.querySelectorAll('#fmea-export-process-checklist input:checked')).map(i => i.dataset.pid);
+  if (!checked.length) { alert('ติ๊กเลือก Process อย่างน้อย 1 รายการก่อนนะครับ'); return; }
+  checked.sort((a,b) => parseFloat(allProcesses[a].processNo) - parseFloat(allProcesses[b].processNo));
+  const partNo = document.getElementById('fep-partno').value.trim() || 'FMEA_export';
+  const headers = ['Process No.','Process Name','No.','Potential Failure Mode','Potential Effect(s)','S','Potential Cause(s)','O','Current Prevention Control','Current Detection Control','D','AP','Recommended Action','Responsible','Target Date','Status'];
+  const wsData = [headers];
+  const bodyMerges = []; let r = 1;
+  checked.forEach(pid => {
+    const p = allProcesses[pid];
+    const fms = Object.values(p.fmea || {}).sort((a,b) => (parseFloat(a.fmNo)||0) - (parseFloat(b.fmNo)||0));
+    const startRow = r;
+    fms.forEach((f,i) => {
+      wsData.push([i===0?p.processNo:'', i===0?p.processName:'', f.fmNo, f.failureMode, f.effect, f.severity, f.cause, f.occurrence, f.prevention, f.detectionControl, f.detection, f.ap, f.recommendedAction, f.responsible, f.targetDate, f.status]);
+      r += 1;
+    });
+    if (r - startRow > 1) { [0,1].forEach(col => bodyMerges.push({s:{r:startRow,c:col},e:{r:r-1,c:col}})); }
+  });
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges'] = bodyMerges;
+  ws['!cols'] = [{wch:10},{wch:18},{wch:6},{wch:20},{wch:18},{wch:5},{wch:18},{wch:5},{wch:18},{wch:18},{wch:5},{wch:6},{wch:20},{wch:14},{wch:12},{wch:10}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'FMEA');
+  XLSX.writeFile(wb, 'FMEA_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
 }
 
 // ================= CONTROL PLAN (global tab) =================
@@ -527,7 +595,11 @@ function flattenChars() {
   Object.keys(allProcesses).forEach(pid => {
     Object.entries(allProcesses[pid].controlPlan?.chars || {}).forEach(([cid, c]) => rows.push({ pid, cid, ...c }));
   });
-  rows.sort((a,b) => activityTime(b) - activityTime(a));
+  rows.sort((a,b) => {
+    const pDiff = (parseFloat(allProcesses[a.pid]?.processNo)||0) - (parseFloat(allProcesses[b.pid]?.processNo)||0);
+    if (pDiff !== 0) return pDiff;
+    return (parseFloat(a.charNo)||0) - (parseFloat(b.charNo)||0);
+  });
   return rows;
 }
 function nextCharNoFor(pid) {
@@ -724,8 +796,11 @@ window.toggleExpand = toggleExpand;
 window.openHistoryModal = openHistoryModal;
 window.deleteLogEntry = deleteLogEntry;
 window.openFmeaModal = openFmeaModal;
+window.onFmeaModalProcessChange = onFmeaModalProcessChange;
 window.saveFmeaModal = saveFmeaModal;
 window.deleteFailureMode = deleteFailureMode;
+window.toggleFmeaExportPicker = toggleFmeaExportPicker;
+window.exportFmeaExcel = exportFmeaExcel;
 window.openCharModal = openCharModal;
 window.saveCharEditModal = saveCharEditModal;
 window.onModalProcessChange = onModalProcessChange;
