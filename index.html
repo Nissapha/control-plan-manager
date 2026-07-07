@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Plan Manager - Thermedez Quality Division</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --blue-900: #042C53; --blue-800: #0C447C; --blue-600: #185FA5; --blue-400: #378ADD;
+    --blue-200: #85B7EB; --blue-100: #B5D4F4; --blue-50: #E6F1FB;
+    --amber-800: #633806; --amber-600: #854F0B; --amber-100: #FAC775; --amber-50: #FAEEDA;
+    --green-800: #27500A; --green-600: #3B6D11; --green-100: #C0DD97; --green-50: #EAF3DE;
+    --red-800: #791F1F; --red-600: #A32D2D; --red-100: #F7C1C1; --red-50: #FCEBEB;
+    --gray-900: #2C2C2A; --gray-600: #5F5E5A; --gray-400: #888780; --gray-200: #D3D1C7; --gray-50: #F1EFE8;
+    --border: #E0DED6; --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", "Sarabun", Tahoma, sans-serif; background: var(--gray-50); margin: 0; color: var(--gray-900); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 80px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .topbar h1 { font-size: 18px; font-weight: 600; color: var(--blue-900); margin: 0; }
+  .user-badge { font-size: 13px; color: var(--gray-600); display: flex; align-items: center; gap: 8px; }
+  .user-badge button { font-size: 12px; padding: 4px 10px; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 16px; color: var(--blue-900); }
+  .card h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--gray-400); margin: 20px 0 8px; }
+  .card h3:first-of-type { margin-top: 0; }
+  label { font-size: 13px; color: var(--gray-600); display: block; margin-bottom: 4px; }
+  input[type=text], select, textarea {
+    width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 14px; background: #fff; font-family: inherit;
+  }
+  textarea { height: auto; padding: 8px 10px; }
+  button {
+    height: 36px; padding: 0 16px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: #fff; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--gray-900);
+  }
+  button:hover { background: var(--gray-50); }
+  button:active { transform: scale(0.98); }
+  .btn-primary { border: 2px solid var(--blue-600); color: var(--blue-800); font-weight: 600; }
+  .btn-danger { border-color: var(--red-600); color: var(--red-800); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+  .badge-draft { background: var(--amber-50); color: var(--amber-800); }
+  .badge-published { background: var(--green-50); color: var(--green-800); }
+  .badge-pending { background: var(--amber-50); color: var(--amber-800); }
+  .badge-rejected { background: var(--red-50); color: var(--red-800); }
+  .row-between { display: flex; justify-content: space-between; align-items: center; }
+  .plan-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .plan-item:last-child { border-bottom: none; }
+  .plan-item:hover { background: var(--gray-50); margin: 0 -12px; padding: 12px; border-radius: var(--radius); }
+  .plan-item p { margin: 0; }
+  .plan-item .sub { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+  .step-item { padding: 10px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .step-item:last-child { border-bottom: none; }
+  .step-item .meta { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+  .progress-dots { display: flex; gap: 6px; margin-bottom: 10px; }
+  .progress-dots div { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
+  .progress-dots div.done { background: var(--blue-400); }
+  .step-label { font-size: 13px; color: var(--gray-600); margin: 0 0 20px; }
+  table.export-preview { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  table.export-preview th, table.export-preview td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  table.export-preview th { background: var(--blue-50); color: var(--blue-800); font-weight: 600; }
+  .qa-zone { background: var(--blue-50); border: 1px solid var(--blue-100); }
+  .qa-zone h2 { color: var(--blue-900); }
+  .order-row { display: grid; grid-template-columns: 70px 1fr 70px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--blue-100); }
+  .order-row:last-child { border-bottom: none; }
+  .order-row input { height: 32px; text-align: center; }
+  .hidden { display: none !important; }
+  .empty-hint { color: var(--gray-400); font-size: 13px; padding: 20px 0; text-align: center; }
+  .log-item { font-size: 12px; color: var(--gray-600); padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .log-item:last-child { border-bottom: none; }
+  a.back-link { font-size: 13px; color: var(--blue-600); cursor: pointer; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <h1>Control Plan Manager</h1>
+    <div class="user-badge">
+      <span id="user-name-display">-</span>
+      <button onclick="promptUserName(true)">เปลี่ยนชื่อ</button>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: PLAN LIST ===== -->
+  <div id="view-plans">
+    <div class="card">
+      <div class="row-between">
+        <h2 style="margin:0;">Control Plan ทั้งหมด</h2>
+        <button class="btn-primary" onclick="showNewPlanForm()">+ สร้างใหม่</button>
+      </div>
+      <div id="new-plan-form" class="hidden" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+        <div class="grid2">
+          <div><label>Part No.</label><input type="text" id="np-partno" placeholder="เช่น MFC-96B-A"></div>
+          <div><label>Part name</label><input type="text" id="np-partname" placeholder="เช่น Open Showcase 96B"></div>
+        </div>
+        <div class="grid2">
+          <div><label>ลูกค้า</label><input type="text" id="np-customer" placeholder="เช่น CPALL / 7-Eleven"></div>
+          <div><label>สายการผลิต</label><input type="text" id="np-line" placeholder="เช่น Line A"></div>
+        </div>
+        <div class="row-between" style="margin-top:8px;">
+          <button onclick="hideNewPlanForm()">ยกเลิก</button>
+          <button class="btn-primary" onclick="createPlan()">สร้าง Control Plan</button>
+        </div>
+      </div>
+      <div id="plans-list" style="margin-top:8px;"><p class="empty-hint">กำลังโหลด...</p></div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: PLAN DETAIL ===== -->
+  <div id="view-plan-detail" class="hidden">
+    <a class="back-link" onclick="goToPlansList()">&larr; กลับไปหน้ารายการ Control Plan</a>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="row-between">
+        <div>
+          <p style="font-weight:600; font-size:16px; margin:0;" id="pd-title">-</p>
+          <p style="font-size:13px; color:var(--gray-600); margin:4px 0 0;" id="pd-sub">-</p>
+        </div>
+        <span class="badge" id="pd-status-badge">-</span>
+      </div>
+    </div>
+
+    <!-- Wizard: only visible while draft -->
+    <div class="card" id="wizard-card">
+      <h2>เพิ่ม Process step ใหม่</h2>
+      <div class="progress-dots" id="wiz-dots"></div>
+      <p class="step-label" id="wiz-label">ขั้นตอนที่ 1 จาก 5 &middot; ข้อมูลขั้นตอน</p>
+
+      <div class="wizard-step" data-step="1">
+        <div class="grid2">
+          <div><label>Process name</label><input type="text" id="w-processname" placeholder="เช่น Helium Leak Test"></div>
+          <div><label>M/C, JIG, Tool</label><input type="text" id="w-mctool" placeholder="เช่น Helium detector"></div>
+        </div>
+      </div>
+      <div class="wizard-step hidden" data-step="2">
+        <div class="grid2">
+          <div><label>Product characteristic</label><input type="text" id="w-prodchar" placeholder="เช่น ความหนาผนังตู้"></div>
+          <div><label>Process characteristic</label><input type="text" id="w-processchar" placeholder="เช่น Leak rate ระหว่างเชื่อม"></div>
+        </div>
+      </div>
+      <div class="wizard-step hidden" data-step="3">
+        <div class="grid2">
+          <div><label>Spec / Tolerance</label><input type="text" id="w-spec" placeholder="เช่น ≤ 0.5 g/year"></div>
+          <div><label>Document</label><input type="text" id="w-document" placeholder="เช่น WI-QC-014"></div>
+          <div><label>Evaluation</label><input type="text" id="w-evaluation" placeholder="เช่น Helium detector"></div>
+        </div>
+      </div>
+      <div class="wizard-step hidden" data-step="4">
+        <div class="grid2">
+          <div><label>จำนวน (Sample size)</label><input type="text" id="w-samplesize" placeholder="เช่น 100%"></div>
+          <div><label>ความถี่ (Frequency)</label><input type="text" id="w-frequency" placeholder="เช่น ทุกตัว"></div>
+        </div>
+      </div>
+      <div class="wizard-step hidden" data-step="5">
+        <div class="grid2">
+          <div><label>บันทึกคุณภาพ</label><input type="text" id="w-qualityrecord" placeholder="เช่น Leak test log sheet"></div>
+          <div><label>Owner</label><input type="text" id="w-owner" placeholder="เช่น QC Line"></div>
+          <div><label>Reaction</label><input type="text" id="w-reaction" placeholder="เช่น คัดแยก ซ่อม แจ้งหัวหน้างาน"></div>
+        </div>
+      </div>
+
+      <div class="row-between" style="margin-top:8px;">
+        <button id="wiz-back" onclick="wizBack()">ย้อนกลับ</button>
+        <button id="wiz-next" class="btn-primary" onclick="wizNext()">ถัดไป</button>
+      </div>
+    </div>
+
+    <!-- Pending steps list -->
+    <div class="card" id="pending-steps-card">
+      <h2 id="pending-steps-title">Process step ที่กรอกไว้แล้ว</h2>
+      <div id="pending-steps-list"><p class="empty-hint">ยังไม่มี step</p></div>
+    </div>
+
+    <!-- QA zone: approve pending steps -->
+    <div class="card qa-zone" id="qa-approve-card">
+      <div class="row-between">
+        <h2 style="margin:0;">พื้นที่ QA Engineer &middot; อนุมัติ Control Plan</h2>
+        <button onclick="toggleQaMode()" id="qa-toggle-btn">เข้าสู่โหมด QA</button>
+      </div>
+      <div id="qa-order-area" class="hidden" style="margin-top:16px;">
+        <p style="font-size:13px; color:var(--gray-600);">กำหนดลำดับ Process No. และ Characteristic No. ก่อนอนุมัติ (แก้เลขได้ตามผังการผลิตจริง)</p>
+        <div id="qa-order-list"></div>
+        <div style="text-align:right; margin-top:12px;">
+          <button class="btn-primary" onclick="approveAll()">อนุมัติทั้งหมด</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Published: read-only table + export -->
+    <div class="card hidden" id="published-card">
+      <div class="row-between">
+        <h2 style="margin:0;">Control Plan (Published)</h2>
+        <button class="btn-primary" onclick="exportToExcel()">Export เป็น Excel</button>
+      </div>
+      <div id="published-table-wrap" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- Change request submission -->
+    <div class="card hidden" id="change-request-card">
+      <h2>เสนอแก้ไขข้อมูล</h2>
+      <div class="grid2">
+        <div>
+          <label>เลือก step ที่ต้องการแก้ไข</label>
+          <select id="cr-step-select"></select>
+        </div>
+        <div>
+          <label>ต้องการแก้ field ไหน</label>
+          <select id="cr-field-select">
+            <option value="processName">Process name</option>
+            <option value="mcTool">M/C, JIG, Tool</option>
+            <option value="productChar">Product characteristic</option>
+            <option value="processChar">Process characteristic</option>
+            <option value="spec">Spec / Tolerance</option>
+            <option value="document">Document</option>
+            <option value="evaluation">Evaluation</option>
+            <option value="sampleSize">จำนวน</option>
+            <option value="frequency">ความถี่</option>
+            <option value="qualityRecord">บันทึกคุณภาพ</option>
+            <option value="owner">Owner</option>
+            <option value="reaction">Reaction</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid2">
+        <div><label>ค่าใหม่ที่เสนอ</label><input type="text" id="cr-newvalue"></div>
+        <div><label>เหตุผล</label><input type="text" id="cr-reason" placeholder="เช่น สเปกเปลี่ยนตาม ECN-2026-014"></div>
+      </div>
+      <div style="text-align:right;"><button class="btn-primary" onclick="submitChangeRequest()">ส่งคำขอแก้ไข</button></div>
+    </div>
+
+    <!-- QA zone: review change requests -->
+    <div class="card qa-zone hidden" id="qa-cr-card">
+      <h2>คำขอแก้ไขที่รอตัดสินใจ (QA เท่านั้น)</h2>
+      <div id="qa-cr-list"><p class="empty-hint">ไม่มีคำขอค้างอยู่</p></div>
+    </div>
+
+    <!-- Approval log -->
+    <div class="card hidden" id="log-card">
+      <h2>ประวัติการอนุมัติ / แก้ไข</h2>
+      <div id="log-list"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import {
+  getDatabase, ref, push, set, update, onValue, get, remove, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBJ0K5-stmSMGdSHE13BlDt_Qi6djgFqT4",
+  authDomain: "control-plan-manager.firebaseapp.com",
+  databaseURL: "https://control-plan-manager-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "control-plan-manager",
+  storageBucket: "control-plan-manager.firebasestorage.app",
+  messagingSenderId: "555855636032",
+  appId: "1:555855636032:web:e0b8262bbcc25612f061a5"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ---------- User identity (simple name tag, not real auth) ----------
+let userName = localStorage.getItem('cpUserName') || '';
+function promptUserName(force) {
+  if (force || !userName) {
+    const v = prompt('ชื่อของคุณ (แสดงในประวัติการกรอก/แก้ไข)', userName || '');
+    if (v && v.trim()) { userName = v.trim(); localStorage.setItem('cpUserName', userName); }
+  }
+  document.getElementById('user-name-display').textContent = userName || 'ไม่ระบุชื่อ';
+}
+promptUserName(false);
+
+let isQaMode = false;
+function toggleQaMode() {
+  isQaMode = !isQaMode;
+  document.getElementById('qa-toggle-btn').textContent = isQaMode ? 'ออกจากโหมด QA' : 'เข้าสู่โหมด QA';
+  document.getElementById('qa-order-area').classList.toggle('hidden', !isQaMode);
+  renderQaOrderList();
+  renderQaChangeRequests();
+}
+
+// ---------- Navigation ----------
+let currentPlanId = null;
+let currentPlanMeta = null;
+let currentSteps = {};
+let currentChangeRequests = {};
+let stepsListener = null, crListener = null, logListener = null;
+
+function goToPlansList() {
+  currentPlanId = null;
+  if (stepsListener) stepsListener();
+  if (crListener) crListener();
+  if (logListener) logListener();
+  document.getElementById('view-plan-detail').classList.add('hidden');
+  document.getElementById('view-plans').classList.remove('hidden');
+}
+
+function openPlan(planId) {
+  currentPlanId = planId;
+  document.getElementById('view-plans').classList.add('hidden');
+  document.getElementById('view-plan-detail').classList.remove('hidden');
+  isQaMode = false;
+  document.getElementById('qa-toggle-btn').textContent = 'เข้าสู่โหมด QA';
+  document.getElementById('qa-order-area').classList.add('hidden');
+  wizStep = 1; renderWizard();
+
+  get(ref(db, 'controlPlans/' + planId + '/meta')).then(snap => {
+    currentPlanMeta = snap.val() || {};
+    renderPlanHeader();
+  });
+
+  stepsListener = onValue(ref(db, 'controlPlans/' + planId + '/steps'), snap => {
+    currentSteps = snap.val() || {};
+    renderPendingSteps();
+    renderPublishedTable();
+    renderQaOrderList();
+    renderCrStepOptions();
+  });
+  crListener = onValue(ref(db, 'controlPlans/' + planId + '/changeRequests'), snap => {
+    currentChangeRequests = snap.val() || {};
+    renderQaChangeRequests();
+  });
+  logListener = onValue(ref(db, 'controlPlans/' + planId + '/approvalLog'), snap => {
+    renderLog(snap.val() || {});
+  });
+}
+
+// ---------- Plan list ----------
+function renderPlansList(plans) {
+  const el = document.getElementById('plans-list');
+  const ids = Object.keys(plans || {});
+  if (!ids.length) { el.innerHTML = '<p class="empty-hint">ยังไม่มี Control Plan &mdash; กด "+ สร้างใหม่" ด้านบน</p>'; return; }
+  ids.sort((a, b) => (plans[b].meta?.createdAt || 0) - (plans[a].meta?.createdAt || 0));
+  el.innerHTML = ids.map(id => {
+    const m = plans[id].meta || {};
+    const isPublished = m.status === 'published';
+    return `<div class="plan-item" onclick="openPlan('${id}')">
+      <div>
+        <p>${escapeHtml(m.partNo || '-')} &middot; ${escapeHtml(m.partName || '-')}</p>
+        <p class="sub">${escapeHtml(m.customer || '-')}</p>
+      </div>
+      <span class="badge ${isPublished ? 'badge-published' : 'badge-draft'}">${isPublished ? 'Published' : 'Draft'}</span>
+    </div>`;
+  }).join('');
+}
+onValue(ref(db, 'controlPlans'), snap => renderPlansList(snap.val()));
+
+function showNewPlanForm() { document.getElementById('new-plan-form').classList.remove('hidden'); }
+function hideNewPlanForm() { document.getElementById('new-plan-form').classList.add('hidden'); }
+
+function createPlan() {
+  const partNo = document.getElementById('np-partno').value.trim();
+  const partName = document.getElementById('np-partname').value.trim();
+  const customer = document.getElementById('np-customer').value.trim();
+  const line = document.getElementById('np-line').value.trim();
+  if (!partNo || !partName) { alert('กรอก Part No. และ Part name ก่อนนะครับ'); return; }
+  promptUserName(false);
+  const newRef = push(ref(db, 'controlPlans'));
+  set(ref(db, 'controlPlans/' + newRef.key + '/meta'), {
+    partNo, partName, customer, line,
+    status: 'draft', createdBy: userName || 'ไม่ระบุชื่อ', createdAt: Date.now()
+  }).then(() => {
+    hideNewPlanForm();
+    document.getElementById('np-partno').value = '';
+    document.getElementById('np-partname').value = '';
+    document.getElementById('np-customer').value = '';
+    document.getElementById('np-line').value = '';
+    openPlan(newRef.key);
+  });
+}
+
+// ---------- Plan header ----------
+function renderPlanHeader() {
+  const m = currentPlanMeta || {};
+  const isPublished = m.status === 'published';
+  document.getElementById('pd-title').textContent = (m.partNo || '-') + ' \u00b7 ' + (m.partName || '-');
+  document.getElementById('pd-sub').textContent = (m.customer || '-') + (m.line ? ' \u00b7 ' + m.line : '');
+  const badge = document.getElementById('pd-status-badge');
+  badge.textContent = isPublished ? 'Published' : 'Draft';
+  badge.className = 'badge ' + (isPublished ? 'badge-published' : 'badge-draft');
+
+  document.getElementById('wizard-card').classList.toggle('hidden', isPublished);
+  document.getElementById('pending-steps-card').classList.toggle('hidden', isPublished);
+  document.getElementById('qa-approve-card').classList.toggle('hidden', isPublished);
+  document.getElementById('published-card').classList.toggle('hidden', !isPublished);
+  document.getElementById('change-request-card').classList.toggle('hidden', !isPublished);
+  document.getElementById('qa-cr-card').classList.toggle('hidden', !isPublished);
+  document.getElementById('log-card').classList.toggle('hidden', isPublished);
+}
+
+// ---------- Wizard ----------
+let wizStep = 1;
+const wizNames = ['ข้อมูลขั้นตอน', 'Characteristics', 'การควบคุม', 'การตรวจสอบ', 'บันทึกและ Reaction plan'];
+document.getElementById('wiz-dots').innerHTML = [1,2,3,4,5].map(n => `<div data-n="${n}"></div>`).join('');
+
+function renderWizard() {
+  document.querySelectorAll('.wizard-step').forEach(el => {
+    el.classList.toggle('hidden', parseInt(el.dataset.step) !== wizStep);
+  });
+  document.querySelectorAll('#wiz-dots div').forEach(el => {
+    el.classList.toggle('done', parseInt(el.dataset.n) <= wizStep);
+  });
+  document.getElementById('wiz-label').textContent = 'ขั้นตอนที่ ' + wizStep + ' จาก 5 \u00b7 ' + wizNames[wizStep - 1];
+  document.getElementById('wiz-next').textContent = wizStep === 5 ? 'บันทึก step นี้' : 'ถัดไป';
+}
+function wizBack() { if (wizStep > 1) { wizStep--; renderWizard(); } }
+function wizNext() {
+  if (wizStep < 5) { wizStep++; renderWizard(); return; }
+  saveStep();
+}
+function saveStep() {
+  promptUserName(false);
+  const step = {
+    processName: document.getElementById('w-processname').value.trim(),
+    mcTool: document.getElementById('w-mctool').value.trim(),
+    productChar: document.getElementById('w-prodchar').value.trim(),
+    processChar: document.getElementById('w-processchar').value.trim(),
+    spec: document.getElementById('w-spec').value.trim(),
+    document: document.getElementById('w-document').value.trim(),
+    evaluation: document.getElementById('w-evaluation').value.trim(),
+    sampleSize: document.getElementById('w-samplesize').value.trim(),
+    frequency: document.getElementById('w-frequency').value.trim(),
+    qualityRecord: document.getElementById('w-qualityrecord').value.trim(),
+    owner: document.getElementById('w-owner').value.trim(),
+    reaction: document.getElementById('w-reaction').value.trim(),
+    enteredBy: userName || 'ไม่ระบุชื่อ',
+    enteredAt: Date.now()
+  };
+  if (!step.processName) { alert('อย่างน้อยต้องกรอก Process name นะครับ'); wizStep = 1; renderWizard(); return; }
+  const newRef = push(ref(db, 'controlPlans/' + currentPlanId + '/steps'));
+  set(newRef, step).then(() => {
+    ['w-processname','w-mctool','w-prodchar','w-processchar','w-spec','w-document','w-evaluation',
+     'w-samplesize','w-frequency','w-qualityrecord','w-owner','w-reaction'].forEach(id => document.getElementById(id).value = '');
+    wizStep = 1; renderWizard();
+  });
+}
+
+// ---------- Pending steps list ----------
+function renderPendingSteps() {
+  const ids = Object.keys(currentSteps || {}).filter(id => !currentSteps[id].processNo);
+  document.getElementById('pending-steps-title').textContent = 'Process step ที่กรอกไว้แล้ว (' + ids.length + ')';
+  const el = document.getElementById('pending-steps-list');
+  if (!ids.length) { el.innerHTML = '<p class="empty-hint">ยังไม่มี step</p>'; return; }
+  ids.sort((a,b) => (currentSteps[a].enteredAt||0) - (currentSteps[b].enteredAt||0));
+  el.innerHTML = ids.map(id => {
+    const s = currentSteps[id];
+    return `<div class="step-item">
+      <div>
+        <p>${escapeHtml(s.processName)}</p>
+        <p class="meta">กรอกโดย ${escapeHtml(s.enteredBy || '-')} \u00b7 ${formatTime(s.enteredAt)}</p>
+      </div>
+      <span class="badge badge-pending">รอตรวจ</span>
+    </div>`;
+  }).join('');
+}
+
+// ---------- QA: order & approve ----------
+function renderQaOrderList() {
+  if (!isQaMode) return;
+  const ids = Object.keys(currentSteps || {}).filter(id => !currentSteps[id].processNo);
+  const el = document.getElementById('qa-order-list');
+  if (!ids.length) { el.innerHTML = '<p class="empty-hint">ไม่มี step รอตรวจ</p>'; return; }
+  ids.sort((a,b) => (currentSteps[a].enteredAt||0) - (currentSteps[b].enteredAt||0));
+  el.innerHTML = ids.map((id, i) => {
+    const s = currentSteps[id];
+    return `<div class="order-row">
+      <input type="text" data-id="${id}" data-role="processno" value="${(i+1)*10}">
+      <span>${escapeHtml(s.processName)} &mdash; ${escapeHtml(s.productChar || s.processChar || '')}</span>
+      <input type="text" data-id="${id}" data-role="charno" value="${i+1}">
+    </div>`;
+  }).join('');
+}
+function approveAll() {
+  const rows = document.querySelectorAll('#qa-order-list .order-row');
+  if (!rows.length) { alert('ไม่มี step ให้อนุมัติ'); return; }
+  promptUserName(false);
+  const updates = {};
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const stepId = inputs[0].dataset.id;
+    updates['controlPlans/' + currentPlanId + '/steps/' + stepId + '/processNo'] = inputs[0].value.trim();
+    updates['controlPlans/' + currentPlanId + '/steps/' + stepId + '/charNo'] = inputs[1].value.trim();
+  });
+  updates['controlPlans/' + currentPlanId + '/meta/status'] = 'published';
+  updates['controlPlans/' + currentPlanId + '/meta/publishedBy'] = userName || 'ไม่ระบุชื่อ';
+  updates['controlPlans/' + currentPlanId + '/meta/publishedAt'] = Date.now();
+  update(ref(db), updates).then(() => {
+    const logRef = push(ref(db, 'controlPlans/' + currentPlanId + '/approvalLog'));
+    set(logRef, { action: 'อนุมัติ Control Plan (initial publish)', by: userName || 'ไม่ระบุชื่อ', at: Date.now() });
+    currentPlanMeta.status = 'published';
+    renderPlanHeader();
+  });
+}
+
+// ---------- Published table + Excel export ----------
+function sortedApprovedSteps() {
+  const ids = Object.keys(currentSteps || {}).filter(id => currentSteps[id].processNo);
+  ids.sort((a,b) => parseFloat(currentSteps[a].processNo) - parseFloat(currentSteps[b].processNo)
+                  || parseFloat(currentSteps[a].charNo) - parseFloat(currentSteps[b].charNo));
+  return ids;
+}
+function renderPublishedTable() {
+  if (currentPlanMeta?.status !== 'published') return;
+  const ids = sortedApprovedSteps();
+  const headers = ['Process No.','Process name','M/C, JIG, Tool','No.','Product char.','Process char.','Spec/Tolerance','Document','Evaluation','จำนวน','ความถี่','บันทึกคุณภาพ','Owner','Reaction'];
+  let html = '<table class="export-preview"><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+  ids.forEach(id => {
+    const s = currentSteps[id];
+    html += '<tr>' + [s.processNo, s.processName, s.mcTool, s.charNo, s.productChar, s.processChar, s.spec, s.document, s.evaluation, s.sampleSize, s.frequency, s.qualityRecord, s.owner, s.reaction]
+      .map(v => `<td>${escapeHtml(v || '')}</td>`).join('') + '</tr>';
+  });
+  html += '</table>';
+  document.getElementById('published-table-wrap').innerHTML = html;
+}
+function exportToExcel() {
+  const ids = sortedApprovedSteps();
+  const m = currentPlanMeta || {};
+  const headerRow1 = ['Process No.\nขั้นตอน','Process Name\nชื่อกระบวนการ','M/C Device , JIG ,TOOL\nเครื่องจักร/เครื่องมือ ที่ใช้ในกระบวนการ','Process / Production Control Method','','','','','','','','','',''];
+  const headerRow2 = ['','','','Characteristics','','','Process Spec/Telorance','Document','Evaluation\nวิธีการตรวจสอบ','การตรวจสอบ','','บันทึกคุณภาพ','Reaction Plan',''];
+  const headerRow3 = ['','','','No.','Product','Process','มาตรฐานการตรวจสอบ','','','จำนวน','ความถี่','','Owner','Reaction'];
+  const dataRows = ids.map(id => {
+    const s = currentSteps[id];
+    return [s.processNo, s.processName, s.mcTool, s.charNo, s.productChar, s.processChar, s.spec, s.document, s.evaluation, s.sampleSize, s.frequency, s.qualityRecord, s.owner, s.reaction];
+  });
+  const wsData = [headerRow1, headerRow2, headerRow3, ...dataRows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges'] = [
+    {s:{r:0,c:0},e:{r:2,c:0}}, {s:{r:0,c:1},e:{r:2,c:1}}, {s:{r:0,c:2},e:{r:2,c:2}}, {s:{r:0,c:3},e:{r:0,c:13}},
+    {s:{r:1,c:3},e:{r:1,c:5}}, {s:{r:1,c:6},e:{r:2,c:6}}, {s:{r:1,c:7},e:{r:2,c:7}}, {s:{r:1,c:8},e:{r:2,c:8}},
+    {s:{r:1,c:9},e:{r:1,c:10}}, {s:{r:1,c:11},e:{r:2,c:11}}, {s:{r:1,c:12},e:{r:1,c:13}}
+  ];
+  ws['!cols'] = [{wch:10},{wch:18},{wch:20},{wch:6},{wch:18},{wch:18},{wch:18},{wch:12},{wch:16},{wch:8},{wch:10},{wch:16},{wch:12},{wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Control plan');
+  const fname = 'ControlPlan_' + (m.partNo || 'export').replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
+// ---------- Change requests ----------
+function renderCrStepOptions() {
+  const ids = sortedApprovedSteps();
+  const sel = document.getElementById('cr-step-select');
+  sel.innerHTML = ids.map(id => `<option value="${id}">${escapeHtml(currentSteps[id].processNo)} \u00b7 ${escapeHtml(currentSteps[id].processName)}</option>`).join('');
+}
+function submitChangeRequest() {
+  const stepId = document.getElementById('cr-step-select').value;
+  const field = document.getElementById('cr-field-select').value;
+  const newValue = document.getElementById('cr-newvalue').value.trim();
+  const reason = document.getElementById('cr-reason').value.trim();
+  if (!stepId || !newValue) { alert('เลือก step และกรอกค่าใหม่ก่อนนะครับ'); return; }
+  promptUserName(false);
+  const crRef = push(ref(db, 'controlPlans/' + currentPlanId + '/changeRequests'));
+  set(crRef, {
+    stepId, field, newValue, reason,
+    oldValue: currentSteps[stepId]?.[field] || '',
+    requestedBy: userName || 'ไม่ระบุชื่อ', requestedAt: Date.now(), status: 'pending'
+  }).then(() => {
+    document.getElementById('cr-newvalue').value = '';
+    document.getElementById('cr-reason').value = '';
+    alert('ส่งคำขอแก้ไขแล้ว รอ QA Engineer ตัดสินใจครับ');
+  });
+}
+function renderQaChangeRequests() {
+  const el = document.getElementById('qa-cr-list');
+  const ids = Object.keys(currentChangeRequests || {}).filter(id => currentChangeRequests[id].status === 'pending');
+  if (!ids.length) { el.innerHTML = '<p class="empty-hint">ไม่มีคำขอค้างอยู่</p>'; return; }
+  el.innerHTML = ids.map(id => {
+    const c = currentChangeRequests[id];
+    const stepName = currentSteps[c.stepId]?.processName || '(step ถูกลบไปแล้ว)';
+    return `<div class="step-item">
+      <div>
+        <p>${escapeHtml(stepName)} &middot; ${escapeHtml(c.field)}: "${escapeHtml(c.oldValue)}" &rarr; "${escapeHtml(c.newValue)}"</p>
+        <p class="meta">เหตุผล: ${escapeHtml(c.reason || '-')} \u00b7 เสนอโดย ${escapeHtml(c.requestedBy)} \u00b7 ${formatTime(c.requestedAt)}</p>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-primary" onclick="decideChangeRequest('${id}', true)">รับ</button>
+        <button class="btn-danger" onclick="decideChangeRequest('${id}', false)">ไม่รับ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function decideChangeRequest(crId, accept) {
+  promptUserName(false);
+  const c = currentChangeRequests[crId];
+  const updates = {};
+  updates['controlPlans/' + currentPlanId + '/changeRequests/' + crId + '/status'] = accept ? 'accepted' : 'rejected';
+  updates['controlPlans/' + currentPlanId + '/changeRequests/' + crId + '/decidedBy'] = userName || 'ไม่ระบุชื่อ';
+  updates['controlPlans/' + currentPlanId + '/changeRequests/' + crId + '/decidedAt'] = Date.now();
+  if (accept) updates['controlPlans/' + currentPlanId + '/steps/' + c.stepId + '/' + c.field] = c.newValue;
+  update(ref(db), updates).then(() => {
+    const logRef = push(ref(db, 'controlPlans/' + currentPlanId + '/approvalLog'));
+    set(logRef, {
+      action: (accept ? 'รับการแก้ไข: ' : 'ปฏิเสธการแก้ไข: ') + c.field + ' (' + (currentSteps[c.stepId]?.processName || '-') + ')',
+      by: userName || 'ไม่ระบุชื่อ', at: Date.now()
+    });
+  });
+}
+
+// ---------- Approval log ----------
+function renderLog(logs) {
+  const el = document.getElementById('log-list');
+  const ids = Object.keys(logs || {});
+  if (!ids.length) { el.innerHTML = '<p class="empty-hint">ยังไม่มีประวัติ</p>'; return; }
+  ids.sort((a,b) => (logs[b].at||0) - (logs[a].at||0));
+  el.innerHTML = ids.map(id => {
+    const l = logs[id];
+    return `<div class="log-item">${escapeHtml(l.action)} &mdash; ${escapeHtml(l.by)} \u00b7 ${formatTime(l.at)}</div>`;
+  }).join('');
+}
+
+// ---------- Utils ----------
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function formatTime(ts) {
+  if (!ts) return '-';
+  const d = new Date(ts);
+  return d.toLocaleDateString('th-TH') + ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+}
+
+// Expose functions needed by inline onclick handlers
+window.promptUserName = promptUserName;
+window.toggleQaMode = toggleQaMode;
+window.goToPlansList = goToPlansList;
+window.openPlan = openPlan;
+window.showNewPlanForm = showNewPlanForm;
+window.hideNewPlanForm = hideNewPlanForm;
+window.createPlan = createPlan;
+window.wizBack = wizBack;
+window.wizNext = wizNext;
+window.approveAll = approveAll;
+window.exportToExcel = exportToExcel;
+window.submitChangeRequest = submitChangeRequest;
+window.decideChangeRequest = decideChangeRequest;
+</script>
+</body>
+</html>
