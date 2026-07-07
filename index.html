@@ -61,9 +61,10 @@ input[type=text], input[type=number], input[type=date], select{
 .btn-danger{background:var(--coral-soft); color:var(--coral); border:1px solid #F0C7BF;}
 .btn-danger:hover{background:#F4D6CF;}
 .btn-sm{padding:6px 11px; font-size:12.5px; border-radius:7px;}
+.btn-icon{padding:4px 8px; font-size:14px; line-height:1; background:transparent; border:1px solid var(--line);}
 
 .grid2{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;}
-.grid3{display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:12px;}
+.grid3{display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; margin-bottom:12px;}
 .row-between{display:flex; justify-content:space-between; align-items:center;}
 
 .badge{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:20px; white-space:nowrap; cursor:pointer; border:1px solid transparent; }
@@ -77,32 +78,30 @@ input[type=text], input[type=number], input[type=date], select{
 .process-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;}
 .process-name{font-size:15px; font-weight:700; color:var(--navy);}
 .process-tools{font-size:12px; color:var(--ink-faint); margin-top:2px;}
-.process-badges{display:flex; gap:8px; flex-wrap:wrap;}
+.process-badges{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+.expand-area{margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft);}
+.expand-area h4{font-size:11.5px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.04em; margin:0 0 6px;}
+.expand-area h4:not(:first-child){margin-top:14px;}
 
 .list-item{padding:10px 0; border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; align-items:center; gap:12px;}
 .list-item:last-child{border-bottom:none;}
 .list-item .meta{font-size:12px; color:var(--ink-faint); margin-top:2px;}
+.list-item .actions{display:flex; gap:6px; flex-shrink:0;}
 
 .tool-row, .card-block{border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:10px; position:relative;}
 .tool-row{display:flex; gap:8px; align-items:center;}
 .tool-row input{flex:1;}
 .card-block-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
 .card-block-head span{font-size:13px; font-weight:700; color:var(--navy);}
+.card-block.editing{border-color:var(--navy); background:var(--navy-soft);}
 
-table.export-preview{width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;}
-table.export-preview th, table.export-preview td{border:1px solid var(--line); padding:6px 8px; text-align:left;}
-table.export-preview th{background:var(--navy-soft); color:var(--navy); font-weight:600;}
-
-.qa-zone{background:var(--navy-soft); border:1px solid var(--navy-soft);}
-.order-process{border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px; background:#fff;}
-.order-char-row{display:grid; grid-template-columns:70px 1fr; gap:10px; align-items:center; padding:4px 0;}
-.order-process input{height:30px; text-align:center;}
+table.mini-table{width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:4px;}
+table.mini-table th, table.mini-table td{border:1px solid var(--line); padding:5px 7px; text-align:left;}
+table.mini-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
 
 .hidden{display:none !important;}
 .empty-state{ text-align:center; padding:40px 24px; color:var(--ink-soft); border:1.5px dashed var(--line); border-radius:var(--radius); }
 .empty-state .es-title{font-weight:700; color:var(--navy); font-size:14px; margin-bottom:4px;}
-.log-item{font-size:12px; color:var(--ink-soft); padding:6px 0; border-bottom:1px solid var(--line-soft);}
-.log-item:last-child{border-bottom:none;}
 a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:none; font-weight:600;}
 .note{font-size:12px; color:#A85F22; background:var(--amber-soft); border-radius:8px; padding:8px 12px; margin:0 0 12px;}
 .export-picker-row{display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--line-soft);}
@@ -181,7 +180,7 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
     </div>
     <div class="note">ช่อง AP (Action Priority) ให้เลือกเองก่อน (H/M/L) รอตาราง AIAG-VDA ที่ยืนยันแล้วมาเชื่อมคำนวณอัตโนมัติทีหลัง</div>
     <div class="panel">
-      <h2>เพิ่ม Potential Failure Mode</h2>
+      <h2 id="fm-form-title">เพิ่ม Potential Failure Mode</h2>
       <h3>ความล้มเหลวและผลกระทบ</h3>
       <div class="grid2">
         <div><label>Potential Failure Mode</label><input type="text" id="fm-failuremode" placeholder="เช่น รอยเชื่อมไม่แน่น"></div>
@@ -211,7 +210,10 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
         <div><label>Target date</label><input type="date" id="fm-targetdate"></div>
         <div><label>Status</label><select id="fm-status"><option value="open">Open</option><option value="inprogress">In progress</option><option value="closed">Closed</option></select></div>
       </div>
-      <div style="text-align:right;"><button class="btn btn-primary" onclick="saveFailureMode()">บันทึก Failure Mode นี้</button></div>
+      <div class="row-between">
+        <a class="back-link hidden" id="fm-cancel-edit" onclick="cancelFmEdit()">ยกเลิกการแก้ไข</a>
+        <button class="btn btn-primary" id="fm-save-btn" onclick="saveFailureMode()" style="margin-left:auto;">บันทึก Failure Mode นี้</button>
+      </div>
     </div>
     <div class="panel">
       <h2>Failure Mode ที่บันทึกไว้</h2>
@@ -223,16 +225,11 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
   <div id="view-cp" class="hidden">
     <a class="back-link" onclick="goHome()">&larr; กลับไปหน้า Process Overview</a>
     <div class="panel" style="margin-top:12px;">
-      <div class="row-between">
-        <div>
-          <p style="font-weight:700; font-size:16px; margin:0; color:var(--navy);" id="cp-process-title">-</p>
-          <p style="font-size:12px; color:var(--ink-faint); margin:4px 0 0;" id="cp-process-tools">-</p>
-        </div>
-        <span class="badge" id="cp-status-badge">-</span>
-      </div>
+      <p style="font-weight:700; font-size:16px; margin:0; color:var(--navy);" id="cp-process-title">-</p>
+      <p style="font-size:12px; color:var(--ink-faint); margin:4px 0 0;" id="cp-process-tools">-</p>
     </div>
 
-    <div class="panel" id="cp-wizard-card">
+    <div class="panel">
       <h2>เพิ่ม Characteristic</h2>
       <div id="cp-char-cards"></div>
       <button class="btn btn-sm btn-ghost" onclick="addCharCard()">+ เพิ่ม Characteristic</button>
@@ -241,62 +238,17 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
       </div>
     </div>
 
-    <div class="panel" id="cp-pending-card">
-      <h2 id="cp-pending-title">Characteristic ที่กรอกไว้แล้ว</h2>
-      <div id="cp-pending-list"><p class="empty-state">ยังไม่มี Characteristic</p></div>
+    <div class="panel">
+      <h2 id="cp-list-title">Characteristic ที่บันทึกไว้</h2>
+      <div id="cp-list"><p class="empty-state">ยังไม่มี Characteristic</p></div>
     </div>
 
-    <div class="panel qa-zone" id="cp-qa-approve-card">
-      <div class="row-between">
-        <h2 style="margin:0;">พื้นที่ QA Engineer &middot; อนุมัติ Control Plan</h2>
-        <button class="btn btn-ghost btn-sm" onclick="toggleQaMode()" id="qa-toggle-btn">เข้าสู่โหมด QA</button>
-      </div>
-      <div id="qa-order-area" class="hidden" style="margin-top:16px;">
-        <p style="font-size:13px; color:var(--ink-soft);">กำหนด Characteristic No. (เริ่มจาก 1) ก่อนอนุมัติ</p>
-        <div id="qa-order-list"></div>
-        <div style="text-align:right; margin-top:12px;"><button class="btn btn-primary" onclick="approveAll()">อนุมัติทั้งหมด</button></div>
-      </div>
-    </div>
-
-    <div class="panel hidden" id="cp-published-card">
-      <h2>Characteristic ที่อนุมัติแล้ว</h2>
-      <div id="cp-published-table-wrap" style="overflow-x:auto;"></div>
-    </div>
-
-    <div class="panel hidden" id="cp-change-request-card">
-      <h2>เสนอแก้ไขข้อมูล</h2>
+    <div class="panel">
+      <h2>Export Process นี้เป็น Excel</h2>
       <div class="grid2">
-        <div><label>เลือก Characteristic ที่ต้องการแก้ไข</label><select id="cr-char-select"></select></div>
-        <div><label>ต้องการแก้ field ไหน</label>
-          <select id="cr-field-select">
-            <option value="productChar">Product characteristic</option>
-            <option value="processChar">Process characteristic</option>
-            <option value="spec">Spec / Tolerance</option>
-            <option value="document">Document</option>
-            <option value="evaluation">Evaluation</option>
-            <option value="sampleSize">จำนวน</option>
-            <option value="frequency">ความถี่</option>
-            <option value="qualityRecord">บันทึกคุณภาพ</option>
-            <option value="owner">Owner</option>
-            <option value="reaction">Reaction</option>
-          </select>
-        </div>
+        <div><label>Part No. (สำหรับชื่อไฟล์)</label><input type="text" id="cp-export-partno" placeholder="เช่น MFC-96B-A"></div>
       </div>
-      <div class="grid2">
-        <div><label>ค่าใหม่ที่เสนอ</label><input type="text" id="cr-newvalue"></div>
-        <div><label>เหตุผล</label><input type="text" id="cr-reason"></div>
-      </div>
-      <div style="text-align:right;"><button class="btn btn-primary" onclick="submitChangeRequest()">ส่งคำขอแก้ไข</button></div>
-    </div>
-
-    <div class="panel qa-zone hidden" id="cp-qa-cr-card">
-      <h2>คำขอแก้ไขที่รอตัดสินใจ (QA เท่านั้น)</h2>
-      <div id="qa-cr-list"><p class="empty-state">ไม่มีคำขอค้างอยู่</p></div>
-    </div>
-
-    <div class="panel hidden" id="cp-log-card">
-      <h2>ประวัติการอนุมัติ / แก้ไข</h2>
-      <div id="log-list"></div>
+      <div style="text-align:right;"><button class="btn btn-ghost" onclick="exportSingleProcess()">Export เป็น Excel</button></div>
     </div>
   </div>
 
@@ -304,7 +256,7 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getDatabase, ref, push, set, update, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+import { getDatabase, ref, push, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBJ0K5-stmSMGdSHE13BlDt_Qi6djgFqT4",
@@ -321,6 +273,7 @@ const db = getDatabase(app);
 function uid() { return Math.random().toString(36).slice(2, 10); }
 function escapeHtml(str) { return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function formatTime(ts) { if (!ts) return '-'; const d = new Date(ts); return d.toLocaleDateString('th-TH') + ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}); }
+function whoWhen(o) { return o.updatedBy ? ('แก้ไขล่าสุดโดย ' + escapeHtml(o.updatedBy) + ' \u00b7 ' + formatTime(o.updatedAt)) : ('กรอกโดย ' + escapeHtml(o.enteredBy) + ' \u00b7 ' + formatTime(o.enteredAt)); }
 
 // ---------- User identity ----------
 let userName = localStorage.getItem('cpUserName') || '';
@@ -333,9 +286,12 @@ function promptUserName(force) {
 }
 promptUserName(false);
 
-// ---------- Global state: single flat process tree ----------
+// ---------- Global state ----------
 let allProcesses = {};
 let currentProcessId = null;
+let expandedProcesses = {};
+let editingFmId = null;
+let editingCharId = null;
 
 onValue(ref(db, 'processes'), snap => {
   allProcesses = snap.val() || {};
@@ -361,7 +317,7 @@ function openFmea(pid) {
   document.getElementById('view-home').classList.add('hidden');
   document.getElementById('view-cp').classList.add('hidden');
   document.getElementById('view-fmea').classList.remove('hidden');
-  resetFmForm();
+  cancelFmEdit();
   renderFmeaView();
 }
 function openCp(pid) {
@@ -369,9 +325,7 @@ function openCp(pid) {
   document.getElementById('view-home').classList.add('hidden');
   document.getElementById('view-fmea').classList.add('hidden');
   document.getElementById('view-cp').classList.remove('hidden');
-  isQaMode = false;
-  document.getElementById('qa-toggle-btn').textContent = 'เข้าสู่โหมด QA';
-  document.getElementById('qa-order-area').classList.add('hidden');
+  editingCharId = null;
   resetCpForm();
   renderCpView();
 }
@@ -407,48 +361,92 @@ function savePoProcess() {
   set(newRef, { processNo, processName, tools: toolsObj, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() })
     .then(() => resetPoForm());
 }
+function deleteProcess(pid) {
+  if (!confirm('ลบ Process นี้พร้อม FMEA และ Control Plan ทั้งหมดที่อยู่ในนั้นเลยหรือไม่? ย้อนกลับไม่ได้')) return;
+  remove(ref(db, 'processes/' + pid));
+}
 
-// ---------- Process Overview: list + badges ----------
-function cpStatusOf(p) {
-  const status = p.controlPlan?.status;
-  const hasChars = p.controlPlan?.chars && Object.keys(p.controlPlan.chars).length;
-  if (status === 'published') return { cls: 'badge-teal', label: 'Control Plan: เสร็จแล้ว' };
-  if (hasChars) return { cls: 'badge-amber', label: 'Control Plan: กำลังทำ' };
-  return { cls: 'badge-slate', label: 'Control Plan: ยังไม่เริ่ม' };
-}
-function fmeaStatusOf(p) {
-  const n = Object.keys(p.fmea || {}).length;
-  if (n) return { cls: 'badge-teal', label: 'FMEA: ทำแล้ว (' + n + ')' };
-  return { cls: 'badge-slate', label: 'FMEA: ยังไม่เริ่ม' };
-}
+// ---------- Process Overview: list + expand ----------
+function toggleExpand(pid) { expandedProcesses[pid] = !expandedProcesses[pid]; renderProcessList(); }
 function renderProcessList() {
   const ids = sortedProcessIds();
   const el = document.getElementById('process-list');
   if (!ids.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Process &mdash; เพิ่มจากฟอร์มด้านบน</p>'; return; }
   el.innerHTML = ids.map(id => {
     const p = allProcesses[id];
-    const fm = fmeaStatusOf(p), cp = cpStatusOf(p);
+    const fmCount = Object.keys(p.fmea || {}).length;
+    const chCount = Object.keys(p.controlPlan?.chars || {}).length;
     const toolsTxt = Object.values(p.tools || {}).join(', ') || 'ไม่มีเครื่องมือระบุ';
+    const expanded = !!expandedProcesses[id];
+    let expandHtml = '';
+    if (expanded) {
+      const fms = Object.values(p.fmea || {});
+      const fmTable = fms.length ? `<table class="mini-table"><tr><th>Failure Mode</th><th>Effect</th><th>S</th><th>O</th><th>D</th><th>AP</th></tr>${fms.map(f => `<tr><td>${escapeHtml(f.failureMode)}</td><td>${escapeHtml(f.effect)}</td><td>${escapeHtml(f.severity)}</td><td>${escapeHtml(f.occurrence)}</td><td>${escapeHtml(f.detection)}</td><td>${escapeHtml(f.ap)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Mode</p>';
+      const chars = Object.values(p.controlPlan?.chars || {}).sort((a,b) => parseFloat(a.charNo||0) - parseFloat(b.charNo||0));
+      const chTable = chars.length ? `<table class="mini-table"><tr><th>No.</th><th>Product char.</th><th>Process char.</th><th>Spec</th><th>Owner</th></tr>${chars.map(c => `<tr><td>${escapeHtml(c.charNo)}</td><td>${escapeHtml(c.productChar)}</td><td>${escapeHtml(c.processChar)}</td><td>${escapeHtml(c.spec)}</td><td>${escapeHtml(c.owner)}</td></tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Characteristic</p>';
+      expandHtml = `<div class="expand-area">
+        <h4>FMEA</h4>${fmTable}
+        <h4>Control Plan</h4>${chTable}
+      </div>`;
+    }
     return `<div class="panel process-card">
       <div class="process-card-top">
         <div>
           <div class="process-name">${escapeHtml(p.processNo)} &middot; ${escapeHtml(p.processName)}</div>
           <div class="process-tools">${escapeHtml(toolsTxt)}</div>
         </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-icon" onclick="toggleExpand('${id}')" title="แสดง/ซ่อนรายละเอียด">${expanded ? '\u25B2' : '\u25BC'}</button>
+          <button class="btn btn-icon btn-danger" onclick="deleteProcess('${id}')" title="ลบ Process">&times;</button>
+        </div>
       </div>
       <div class="process-badges">
-        <span class="badge ${fm.cls}" onclick="openFmea('${id}')">${fm.label} &rarr;</span>
-        <span class="badge ${cp.cls}" onclick="openCp('${id}')">${cp.label} &rarr;</span>
+        <span class="badge ${fmCount ? 'badge-teal' : 'badge-slate'}" onclick="openFmea('${id}')">FMEA (${fmCount}) &rarr;</span>
+        <span class="badge ${chCount ? 'badge-teal' : 'badge-slate'}" onclick="openCp('${id}')">Control Plan (${chCount}) &rarr;</span>
       </div>
+      ${expandHtml}
     </div>`;
   }).join('');
 }
 
-// ---------- FMEA sub-view ----------
+// ---------- FMEA sub-view (add + edit reuse same form) ----------
 function resetFmForm() {
   ['fm-failuremode','fm-effect','fm-severity','fm-cause','fm-occurrence','fm-prevention','fm-detectioncontrol','fm-detection','fm-recommendedaction','fm-responsible','fm-targetdate'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('fm-ap').value = 'H';
   document.getElementById('fm-status').value = 'open';
+}
+function cancelFmEdit() {
+  editingFmId = null;
+  resetFmForm();
+  document.getElementById('fm-form-title').textContent = 'เพิ่ม Potential Failure Mode';
+  document.getElementById('fm-save-btn').textContent = 'บันทึก Failure Mode นี้';
+  document.getElementById('fm-cancel-edit').classList.add('hidden');
+}
+function editFailureMode(fmId) {
+  const f = allProcesses[currentProcessId].fmea[fmId];
+  editingFmId = fmId;
+  document.getElementById('fm-failuremode').value = f.failureMode || '';
+  document.getElementById('fm-effect').value = f.effect || '';
+  document.getElementById('fm-severity').value = f.severity || '';
+  document.getElementById('fm-cause').value = f.cause || '';
+  document.getElementById('fm-occurrence').value = f.occurrence || '';
+  document.getElementById('fm-prevention').value = f.prevention || '';
+  document.getElementById('fm-detectioncontrol').value = f.detectionControl || '';
+  document.getElementById('fm-detection').value = f.detection || '';
+  document.getElementById('fm-ap').value = f.ap || 'H';
+  document.getElementById('fm-recommendedaction').value = f.recommendedAction || '';
+  document.getElementById('fm-responsible').value = f.responsible || '';
+  document.getElementById('fm-targetdate').value = f.targetDate || '';
+  document.getElementById('fm-status').value = f.status || 'open';
+  document.getElementById('fm-form-title').textContent = 'แก้ไข Potential Failure Mode';
+  document.getElementById('fm-save-btn').textContent = 'บันทึกการแก้ไข';
+  document.getElementById('fm-cancel-edit').classList.remove('hidden');
+  document.getElementById('fm-form-title').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function deleteFailureMode(fmId) {
+  if (!confirm('ลบ Failure Mode นี้หรือไม่?')) return;
+  remove(ref(db, 'processes/' + currentProcessId + '/fmea/' + fmId));
+  if (editingFmId === fmId) cancelFmEdit();
 }
 function saveFailureMode() {
   const failureMode = document.getElementById('fm-failuremode').value.trim();
@@ -466,11 +464,16 @@ function saveFailureMode() {
     recommendedAction: document.getElementById('fm-recommendedaction').value.trim(),
     responsible: document.getElementById('fm-responsible').value.trim(),
     targetDate: document.getElementById('fm-targetdate').value,
-    status: document.getElementById('fm-status').value,
-    enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
+    status: document.getElementById('fm-status').value
   };
-  const newRef = push(ref(db, 'processes/' + currentProcessId + '/fmea'));
-  set(newRef, fm).then(() => resetFmForm());
+  if (editingFmId) {
+    fm.updatedBy = userName || 'ไม่ระบุชื่อ'; fm.updatedAt = Date.now();
+    update(ref(db, 'processes/' + currentProcessId + '/fmea/' + editingFmId), fm).then(() => cancelFmEdit());
+  } else {
+    fm.enteredBy = userName || 'ไม่ระบุชื่อ'; fm.enteredAt = Date.now();
+    const newRef = push(ref(db, 'processes/' + currentProcessId + '/fmea'));
+    set(newRef, fm).then(() => resetFmForm());
+  }
 }
 function renderFmeaView() {
   const p = allProcesses[currentProcessId];
@@ -488,29 +491,31 @@ function renderFmeaView() {
     return `<div class="list-item">
       <div>
         <p style="margin:0; font-weight:600;">${escapeHtml(f.failureMode)} &rarr; ${escapeHtml(f.effect || '-')}</p>
-        <p class="meta">S:${escapeHtml(f.severity||'-')} O:${escapeHtml(f.occurrence||'-')} D:${escapeHtml(f.detection||'-')} \u00b7 ${escapeHtml(f.recommendedAction || 'ไม่มีมาตรการเพิ่มเติม')} \u00b7 ${escapeHtml(f.enteredBy)} \u00b7 ${formatTime(f.enteredAt)}</p>
+        <p class="meta">S:${escapeHtml(f.severity||'-')} O:${escapeHtml(f.occurrence||'-')} D:${escapeHtml(f.detection||'-')} \u00b7 ${escapeHtml(f.recommendedAction || 'ไม่มีมาตรการเพิ่มเติม')} \u00b7 ${whoWhen(f)}</p>
       </div>
-      <span class="badge ${apCls(f.ap)}">AP: ${escapeHtml(f.ap)}</span>
+      <div class="actions">
+        <span class="badge ${apCls(f.ap)}" style="cursor:default;">AP: ${escapeHtml(f.ap)}</span>
+        <button class="btn btn-icon" onclick="editFailureMode('${id}')" title="แก้ไข">&#9998;</button>
+        <button class="btn btn-icon btn-danger" onclick="deleteFailureMode('${id}')" title="ลบ">&times;</button>
+      </div>
     </div>`;
   }).join('');
 }
 
 // ---------- Control Plan sub-view ----------
-let isQaMode = false;
-function toggleQaMode() {
-  isQaMode = !isQaMode;
-  document.getElementById('qa-toggle-btn').textContent = isQaMode ? 'ออกจากโหมด QA' : 'เข้าสู่โหมด QA';
-  document.getElementById('qa-order-area').classList.toggle('hidden', !isQaMode);
-  renderCpView();
-}
-function blankChar() { return { key: uid(), productChar:'', processChar:'', spec:'', document:'', evaluation:'', sampleSize:'', frequency:'', qualityRecord:'', owner:'', reaction:'' }; }
+function blankChar(nextNo) { return { key: uid(), charNo: String(nextNo), productChar:'', processChar:'', spec:'', document:'', evaluation:'', sampleSize:'', frequency:'', qualityRecord:'', owner:'', reaction:'' }; }
 let cpChars = [];
-function resetCpForm() { cpChars = [blankChar()]; renderCharCards(); }
+function nextCharNo() {
+  const p = allProcesses[currentProcessId];
+  const nums = Object.values(p?.controlPlan?.chars || {}).map(c => parseFloat(c.charNo) || 0);
+  return (nums.length ? Math.max(...nums) : 0) + 1;
+}
+function resetCpForm() { cpChars = [blankChar(nextCharNo())]; renderCharCards(); }
 function renderCharCards() {
   document.getElementById('cp-char-cards').innerHTML = cpChars.map((c, i) => `
     <div class="card-block">
       <div class="card-block-head">
-        <span>Characteristic ${i + 1}</span>
+        <span>Characteristic No. <input type="text" style="width:60px; display:inline-block; height:26px; padding:0 6px;" value="${escapeHtml(c.charNo)}" oninput="updateChar('${c.key}','charNo',this.value)"></span>
         ${cpChars.length > 1 ? `<button class="btn btn-sm btn-danger" onclick="removeCharCard('${c.key}')">ลบ</button>` : ''}
       </div>
       <div class="grid2">
@@ -533,7 +538,7 @@ function renderCharCards() {
       </div>
     </div>`).join('');
 }
-function addCharCard() { cpChars.push(blankChar()); renderCharCards(); }
+function addCharCard() { cpChars.push(blankChar(nextCharNo() + cpChars.length)); renderCharCards(); }
 function removeCharCard(key) { cpChars = cpChars.filter(c => c.key !== key); renderCharCards(); }
 function updateChar(key, field, val) { const c = cpChars.find(c => c.key === key); if (c) c[field] = val; }
 function saveCharacteristics() {
@@ -541,129 +546,72 @@ function saveCharacteristics() {
   const updates = {};
   cpChars.forEach(c => {
     updates['processes/' + currentProcessId + '/controlPlan/chars/' + c.key] = {
-      productChar: c.productChar.trim(), processChar: c.processChar.trim(), spec: c.spec.trim(),
+      charNo: c.charNo.trim(), productChar: c.productChar.trim(), processChar: c.processChar.trim(), spec: c.spec.trim(),
       document: c.document.trim(), evaluation: c.evaluation.trim(), sampleSize: c.sampleSize.trim(),
       frequency: c.frequency.trim(), qualityRecord: c.qualityRecord.trim(), owner: c.owner.trim(), reaction: c.reaction.trim(),
       enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
     };
   });
-  const p = allProcesses[currentProcessId];
-  if (!p.controlPlan?.status) updates['processes/' + currentProcessId + '/controlPlan/status'] = 'draft';
   update(ref(db), updates).then(() => resetCpForm());
 }
-
-function charEntries(p) { return Object.entries(p.controlPlan?.chars || {}); }
+function deleteChar(cid) {
+  if (!confirm('ลบ Characteristic นี้หรือไม่?')) return;
+  remove(ref(db, 'processes/' + currentProcessId + '/controlPlan/chars/' + cid));
+  if (editingCharId === cid) editingCharId = null;
+}
+function editChar(cid) { editingCharId = cid; renderCpView(); }
+function cancelCharEdit() { editingCharId = null; renderCpView(); }
+function saveCharEdit(cid) {
+  promptUserName(false);
+  const row = document.querySelector('[data-editrow="' + cid + '"]');
+  const get = f => row.querySelector('[data-f="' + f + '"]').value.trim();
+  const updated = {
+    charNo: get('charNo'), productChar: get('productChar'), processChar: get('processChar'), spec: get('spec'),
+    document: get('document'), evaluation: get('evaluation'), sampleSize: get('sampleSize'), frequency: get('frequency'),
+    qualityRecord: get('qualityRecord'), owner: get('owner'), reaction: get('reaction'),
+    updatedBy: userName || 'ไม่ระบุชื่อ', updatedAt: Date.now()
+  };
+  update(ref(db, 'processes/' + currentProcessId + '/controlPlan/chars/' + cid), updated).then(() => { editingCharId = null; });
+}
+function charEditRowHtml(cid, c) {
+  const f = (key, label) => `<div><label>${label}</label><input type="text" data-f="${key}" value="${escapeHtml(c[key])}"></div>`;
+  return `<div class="card-block editing" data-editrow="${cid}">
+    <div class="card-block-head"><span>แก้ไข Characteristic No. <input type="text" data-f="charNo" style="width:60px; display:inline-block; height:26px; padding:0 6px;" value="${escapeHtml(c.charNo)}"></span></div>
+    <div class="grid2">${f('productChar','Product characteristic')}${f('processChar','Process characteristic')}</div>
+    <div class="grid2">${f('spec','Spec / Tolerance')}${f('document','Document')}${f('evaluation','Evaluation')}</div>
+    <div class="grid2">${f('sampleSize','จำนวน')}${f('frequency','ความถี่')}</div>
+    <div class="grid2" style="margin-bottom:0;">${f('qualityRecord','บันทึกคุณภาพ')}${f('owner','Owner')}${f('reaction','Reaction')}</div>
+    <div class="row-between" style="margin-top:10px;">
+      <a class="back-link" onclick="cancelCharEdit()">ยกเลิก</a>
+      <button class="btn btn-primary btn-sm" onclick="saveCharEdit('${cid}')">บันทึกการแก้ไข</button>
+    </div>
+  </div>`;
+}
 function renderCpView() {
   const p = allProcesses[currentProcessId];
   if (!p) return;
   document.getElementById('cp-process-title').textContent = p.processNo + ' \u00b7 ' + p.processName;
   document.getElementById('cp-process-tools').textContent = Object.values(p.tools||{}).join(', ') || 'ไม่มีเครื่องมือระบุ';
-  const status = p.controlPlan?.status;
-  const badge = document.getElementById('cp-status-badge');
-  badge.className = 'badge ' + (status === 'published' ? 'badge-teal' : (status === 'draft' ? 'badge-amber' : 'badge-slate'));
-  badge.textContent = status === 'published' ? 'Published' : (status === 'draft' ? 'Draft' : 'ยังไม่เริ่ม');
-
-  const isPublished = status === 'published';
-  document.getElementById('cp-wizard-card').classList.toggle('hidden', isPublished);
-  document.getElementById('cp-pending-card').classList.toggle('hidden', isPublished);
-  document.getElementById('cp-qa-approve-card').classList.toggle('hidden', isPublished);
-  document.getElementById('cp-published-card').classList.toggle('hidden', !isPublished);
-  document.getElementById('cp-change-request-card').classList.toggle('hidden', !isPublished);
-  document.getElementById('cp-qa-cr-card').classList.toggle('hidden', !isPublished);
-  document.getElementById('cp-log-card').classList.toggle('hidden', isPublished);
-
-  // Pending list
-  const pending = charEntries(p).filter(([k,c]) => !c.charNo);
-  const pendEl = document.getElementById('cp-pending-list');
-  document.getElementById('cp-pending-title').textContent = 'Characteristic ที่กรอกไว้แล้ว (' + pending.length + ')';
-  pendEl.innerHTML = pending.length ? pending.map(([k,c]) => `<div class="list-item"><div><p style="margin:0;">${escapeHtml(c.productChar || c.processChar || '(ไม่ระบุชื่อ)')}</p><p class="meta">กรอกโดย ${escapeHtml(c.enteredBy)} \u00b7 ${formatTime(c.enteredAt)}</p></div><span class="badge badge-amber">รอตรวจ</span></div>`).join('') : '<p class="empty-state">ยังไม่มี Characteristic</p>';
-
-  // QA order list
-  if (isQaMode) {
-    const qaEl = document.getElementById('qa-order-list');
-    qaEl.innerHTML = pending.length ? pending.map(([k,c], i) => `<div class="order-char-row"><input type="text" data-cid="${k}" value="${i+1}"><span>${escapeHtml(c.productChar || c.processChar || '(ไม่ระบุชื่อ)')}</span></div>`).join('') : '<p class="empty-state">ไม่มี Characteristic รอตรวจ</p>';
-  }
-
-  // Published table
-  if (isPublished) {
-    const approved = charEntries(p).filter(([k,c]) => c.charNo).sort((a,b) => parseFloat(a[1].charNo) - parseFloat(b[1].charNo));
-    const headers = ['No.','Product char.','Process char.','Spec/Tolerance','Document','Evaluation','จำนวน','ความถี่','บันทึกคุณภาพ','Owner','Reaction'];
-    let html = '<table class="export-preview"><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
-    approved.forEach(([k,c]) => { html += '<tr>' + [c.charNo,c.productChar,c.processChar,c.spec,c.document,c.evaluation,c.sampleSize,c.frequency,c.qualityRecord,c.owner,c.reaction].map(v => `<td>${escapeHtml(v||'')}</td>`).join('') + '</tr>'; });
-    html += '</table>';
-    document.getElementById('cp-published-table-wrap').innerHTML = html;
-
-    const sel = document.getElementById('cr-char-select');
-    sel.innerHTML = approved.map(([k,c]) => `<option value="${k}">${escapeHtml(c.charNo)} \u00b7 ${escapeHtml(c.productChar || c.processChar || '')}</option>`).join('');
-  }
-
-  renderQaChangeRequests(p);
-  renderLog(p.controlPlan?.approvalLog || {});
-}
-function approveAll() {
-  const rows = document.querySelectorAll('#qa-order-list input');
-  if (!rows.length) { alert('ไม่มี Characteristic ให้อนุมัติ'); return; }
-  promptUserName(false);
-  const updates = {};
-  rows.forEach(inp => { updates['processes/' + currentProcessId + '/controlPlan/chars/' + inp.dataset.cid + '/charNo'] = inp.value.trim(); });
-  updates['processes/' + currentProcessId + '/controlPlan/status'] = 'published';
-  updates['processes/' + currentProcessId + '/controlPlan/publishedBy'] = userName || 'ไม่ระบุชื่อ';
-  updates['processes/' + currentProcessId + '/controlPlan/publishedAt'] = Date.now();
-  update(ref(db), updates).then(() => {
-    const logRef = push(ref(db, 'processes/' + currentProcessId + '/controlPlan/approvalLog'));
-    set(logRef, { action: 'อนุมัติ Control Plan (initial publish)', by: userName || 'ไม่ระบุชื่อ', at: Date.now() });
-  });
-}
-
-function submitChangeRequest() {
-  const cid = document.getElementById('cr-char-select').value;
-  if (!cid) { alert('เลือก Characteristic ก่อนนะครับ'); return; }
-  const field = document.getElementById('cr-field-select').value;
-  const newValue = document.getElementById('cr-newvalue').value.trim();
-  const reason = document.getElementById('cr-reason').value.trim();
-  if (!newValue) { alert('กรอกค่าใหม่ก่อนนะครับ'); return; }
-  promptUserName(false);
-  const oldValue = allProcesses[currentProcessId]?.controlPlan?.chars?.[cid]?.[field] || '';
-  const crRef = push(ref(db, 'processes/' + currentProcessId + '/controlPlan/changeRequests'));
-  set(crRef, { cid, field, newValue, oldValue, requestedBy: userName || 'ไม่ระบุชื่อ', requestedAt: Date.now(), status: 'pending' })
-    .then(() => { document.getElementById('cr-newvalue').value=''; document.getElementById('cr-reason').value=''; alert('ส่งคำขอแก้ไขแล้ว รอ QA Engineer ตัดสินใจครับ'); });
-}
-function renderQaChangeRequests(p) {
-  const el = document.getElementById('qa-cr-list');
-  const crs = p.controlPlan?.changeRequests || {};
-  const ids = Object.keys(crs).filter(id => crs[id].status === 'pending');
-  if (!ids.length) { el.innerHTML = '<p class="empty-state">ไม่มีคำขอค้างอยู่</p>'; return; }
-  el.innerHTML = ids.map(id => {
-    const c = crs[id];
+  const chars = Object.entries(p.controlPlan?.chars || {}).sort((a,b) => parseFloat(a[1].charNo||0) - parseFloat(b[1].charNo||0));
+  document.getElementById('cp-list-title').textContent = 'Characteristic ที่บันทึกไว้ (' + chars.length + ')';
+  const el = document.getElementById('cp-list');
+  if (!chars.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Characteristic</p>'; return; }
+  el.innerHTML = chars.map(([k,c]) => {
+    if (editingCharId === k) return charEditRowHtml(k, c);
     return `<div class="list-item">
-      <div><p style="margin:0;">${escapeHtml(c.field)}: "${escapeHtml(c.oldValue)}" &rarr; "${escapeHtml(c.newValue)}"</p>
-      <p class="meta">เหตุผล: ${escapeHtml(c.reason||'-')} \u00b7 เสนอโดย ${escapeHtml(c.requestedBy)} \u00b7 ${formatTime(c.requestedAt)}</p></div>
-      <div style="display:flex; gap:8px;"><button class="btn btn-primary btn-sm" onclick="decideChangeRequest('${id}', true)">รับ</button><button class="btn btn-danger btn-sm" onclick="decideChangeRequest('${id}', false)">ไม่รับ</button></div>
+      <div>
+        <p style="margin:0;"><b>${escapeHtml(c.charNo)}</b> &middot; ${escapeHtml(c.productChar || c.processChar || '(ไม่ระบุชื่อ)')}</p>
+        <p class="meta">Spec: ${escapeHtml(c.spec || '-')} \u00b7 ${whoWhen(c)}</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-icon" onclick="editChar('${k}')" title="แก้ไข">&#9998;</button>
+        <button class="btn btn-icon btn-danger" onclick="deleteChar('${k}')" title="ลบ">&times;</button>
+      </div>
     </div>`;
   }).join('');
 }
-function decideChangeRequest(crId, accept) {
-  promptUserName(false);
-  const c = allProcesses[currentProcessId].controlPlan.changeRequests[crId];
-  const updates = {};
-  updates['processes/' + currentProcessId + '/controlPlan/changeRequests/' + crId + '/status'] = accept ? 'accepted' : 'rejected';
-  updates['processes/' + currentProcessId + '/controlPlan/changeRequests/' + crId + '/decidedBy'] = userName || 'ไม่ระบุชื่อ';
-  updates['processes/' + currentProcessId + '/controlPlan/changeRequests/' + crId + '/decidedAt'] = Date.now();
-  if (accept) updates['processes/' + currentProcessId + '/controlPlan/chars/' + c.cid + '/' + c.field] = c.newValue;
-  update(ref(db), updates).then(() => {
-    const logRef = push(ref(db, 'processes/' + currentProcessId + '/controlPlan/approvalLog'));
-    set(logRef, { action: (accept ? 'รับการแก้ไข: ' : 'ปฏิเสธการแก้ไข: ') + c.field, by: userName || 'ไม่ระบุชื่อ', at: Date.now() });
-  });
-}
-function renderLog(logs) {
-  const el = document.getElementById('log-list');
-  const ids = Object.keys(logs || {});
-  if (!ids.length) { el.innerHTML = '<p class="empty-state">ยังไม่มีประวัติ</p>'; return; }
-  ids.sort((a,b) => (logs[b].at||0) - (logs[a].at||0));
-  el.innerHTML = ids.map(id => `<div class="log-item">${escapeHtml(logs[id].action)} &mdash; ${escapeHtml(logs[id].by)} \u00b7 ${formatTime(logs[id].at)}</div>`).join('');
-}
 
-// ---------- Combined export picker (Home) ----------
+// ---------- Export ----------
 function toggleExportPicker() {
   const el = document.getElementById('export-picker');
   el.classList.toggle('hidden');
@@ -673,29 +621,24 @@ function renderExportChecklist() {
   const ids = sortedProcessIds();
   document.getElementById('export-process-checklist').innerHTML = ids.map(id => {
     const p = allProcesses[id];
-    const approvedCount = charEntries(p).filter(([k,c]) => c.charNo).length;
+    const n = Object.keys(p.controlPlan?.chars || {}).length;
     return `<div class="export-picker-row">
-      <input type="checkbox" data-pid="${id}" ${approvedCount ? '' : 'disabled'}>
-      <span>${escapeHtml(p.processNo)} \u00b7 ${escapeHtml(p.processName)} ${approvedCount ? '(' + approvedCount + ' characteristic)' : '(ยังไม่มี Characteristic ที่อนุมัติแล้ว)'}</span>
+      <input type="checkbox" data-pid="${id}" ${n ? '' : 'disabled'}>
+      <span>${escapeHtml(p.processNo)} \u00b7 ${escapeHtml(p.processName)} ${n ? '(' + n + ' characteristic)' : '(ยังไม่มี Characteristic)'}</span>
     </div>`;
   }).join('');
 }
-function exportCombined() {
-  const checked = Array.from(document.querySelectorAll('#export-process-checklist input:checked')).map(i => i.dataset.pid);
-  if (!checked.length) { alert('ติ๊กเลือก Process อย่างน้อย 1 รายการก่อนนะครับ'); return; }
-  const partNo = document.getElementById('ep-partno').value.trim() || 'export';
-  checked.sort((a,b) => parseFloat(allProcesses[a].processNo) - parseFloat(allProcesses[b].processNo));
-
+function buildControlPlanSheet(pids, filename) {
   const headerRow1 = ['Process No.\nขั้นตอน','Process Name\nชื่อกระบวนการ','M/C Device , JIG ,TOOL\nเครื่องจักร/เครื่องมือ ที่ใช้ในกระบวนการ','Process / Production Control Method','','','','','','','','','',''];
   const headerRow2 = ['','','','Characteristics','','','Process Spec/Telorance','Document','Evaluation\nวิธีการตรวจสอบ','การตรวจสอบ','','บันทึกคุณภาพ','Reaction Plan',''];
   const headerRow3 = ['','','','No.','Product','Process','มาตรฐานการตรวจสอบ','','','จำนวน','ความถี่','','Owner','Reaction'];
   const wsData = [headerRow1, headerRow2, headerRow3];
   const bodyMerges = []; let r = 3;
-  checked.forEach(pid => {
+  pids.forEach(pid => {
     const p = allProcesses[pid]; const tools = Object.values(p.tools||{}).join('\n');
-    const approved = charEntries(p).filter(([k,c]) => c.charNo).sort((a,b) => parseFloat(a[1].charNo) - parseFloat(b[1].charNo));
+    const chars = Object.values(p.controlPlan?.chars || {}).sort((a,b) => parseFloat(a.charNo||0) - parseFloat(b.charNo||0));
     const startRow = r;
-    approved.forEach(([k,c], i) => {
+    chars.forEach((c, i) => {
       wsData.push([i===0?p.processNo:'', i===0?p.processName:'', i===0?tools:'', c.charNo, c.productChar, c.processChar, c.spec, c.document, c.evaluation, c.sampleSize, c.frequency, c.qualityRecord, c.owner, c.reaction]);
       r += 1;
     });
@@ -710,7 +653,18 @@ function exportCombined() {
   ws['!cols'] = [{wch:10},{wch:18},{wch:20},{wch:6},{wch:18},{wch:18},{wch:18},{wch:12},{wch:16},{wch:8},{wch:10},{wch:16},{wch:12},{wch:16}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Control plan');
-  XLSX.writeFile(wb, 'ControlPlan_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
+  XLSX.writeFile(wb, filename);
+}
+function exportCombined() {
+  const checked = Array.from(document.querySelectorAll('#export-process-checklist input:checked')).map(i => i.dataset.pid);
+  if (!checked.length) { alert('ติ๊กเลือก Process อย่างน้อย 1 รายการก่อนนะครับ'); return; }
+  const partNo = document.getElementById('ep-partno').value.trim() || 'export';
+  checked.sort((a,b) => parseFloat(allProcesses[a].processNo) - parseFloat(allProcesses[b].processNo));
+  buildControlPlanSheet(checked, 'ControlPlan_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
+}
+function exportSingleProcess() {
+  const partNo = document.getElementById('cp-export-partno').value.trim() || allProcesses[currentProcessId].processName;
+  buildControlPlanSheet([currentProcessId], 'ControlPlan_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
 }
 
 window.promptUserName = promptUserName;
@@ -721,17 +675,23 @@ window.addTool = addTool;
 window.removePoTool = removePoTool;
 window.updatePoTool = updatePoTool;
 window.savePoProcess = savePoProcess;
+window.deleteProcess = deleteProcess;
+window.toggleExpand = toggleExpand;
+window.editFailureMode = editFailureMode;
+window.deleteFailureMode = deleteFailureMode;
+window.cancelFmEdit = cancelFmEdit;
 window.saveFailureMode = saveFailureMode;
-window.toggleQaMode = toggleQaMode;
 window.addCharCard = addCharCard;
 window.removeCharCard = removeCharCard;
 window.updateChar = updateChar;
 window.saveCharacteristics = saveCharacteristics;
-window.approveAll = approveAll;
-window.submitChangeRequest = submitChangeRequest;
-window.decideChangeRequest = decideChangeRequest;
+window.deleteChar = deleteChar;
+window.editChar = editChar;
+window.cancelCharEdit = cancelCharEdit;
+window.saveCharEdit = saveCharEdit;
 window.toggleExportPicker = toggleExportPicker;
 window.exportCombined = exportCombined;
+window.exportSingleProcess = exportSingleProcess;
 </script>
 </body>
 </html>
