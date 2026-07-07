@@ -21,10 +21,10 @@
   .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
   .topbar h1 { font-size: 18px; font-weight: 600; color: var(--blue-900); margin: 0; }
   .user-badge { font-size: 13px; color: var(--gray-600); display: flex; align-items: center; gap: 8px; }
-  .user-badge button { font-size: 12px; padding: 4px 10px; }
+  .user-badge button { font-size: 12px; padding: 4px 10px; height: auto; }
   .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
   .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 16px; color: var(--blue-900); }
-  .card h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--gray-400); margin: 20px 0 8px; }
+  .card h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--gray-400); margin: 16px 0 8px; }
   .card h3:first-of-type { margin-top: 0; }
   label { font-size: 13px; color: var(--gray-600); display: block; margin-bottom: 4px; }
   input[type=text], select, textarea {
@@ -40,6 +40,8 @@
   button:active { transform: scale(0.98); }
   .btn-primary { border: 2px solid var(--blue-600); color: var(--blue-800); font-weight: 600; }
   .btn-danger { border-color: var(--red-600); color: var(--red-800); }
+  .btn-sm { height: 30px; padding: 0 10px; font-size: 12px; }
+  .btn-ghost { border: none; background: none; color: var(--blue-600); text-decoration: underline; padding: 0; height: auto; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
   .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
   .badge-draft { background: var(--amber-50); color: var(--amber-800); }
@@ -64,9 +66,15 @@
   table.export-preview th { background: var(--blue-50); color: var(--blue-800); font-weight: 600; }
   .qa-zone { background: var(--blue-50); border: 1px solid var(--blue-100); }
   .qa-zone h2 { color: var(--blue-900); }
-  .order-row { display: grid; grid-template-columns: 70px 1fr 70px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--blue-100); }
-  .order-row:last-child { border-bottom: none; }
-  .order-row input { height: 32px; text-align: center; }
+  .order-process { border: 1px solid var(--blue-100); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 10px; background: #fff; }
+  .order-process-head { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center; margin-bottom: 6px; }
+  .order-char-row { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center; padding: 4px 0 4px 20px; }
+  .order-process input, .order-char-row input { height: 30px; text-align: center; }
+  .tool-row, .char-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; position: relative; }
+  .tool-row { display: flex; gap: 8px; align-items: center; }
+  .tool-row input { flex: 1; }
+  .char-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .char-card-head span { font-size: 13px; font-weight: 600; color: var(--blue-800); }
   .hidden { display: none !important; }
   .empty-hint { color: var(--gray-400); font-size: 13px; padding: 20px 0; text-align: center; }
   .log-item { font-size: 12px; color: var(--gray-600); padding: 6px 0; border-bottom: 1px solid var(--border); }
@@ -128,42 +136,24 @@
     <div class="card" id="wizard-card">
       <h2>เพิ่ม Process step ใหม่</h2>
       <div class="progress-dots" id="wiz-dots"></div>
-      <p class="step-label" id="wiz-label">ขั้นตอนที่ 1 จาก 5 &middot; ข้อมูลขั้นตอน</p>
+      <p class="step-label" id="wiz-label">ขั้นตอนที่ 1 จาก 2 &middot; ข้อมูลขั้นตอน</p>
 
-      <div class="wizard-step" data-step="1">
-        <div class="grid2">
-          <div><label>Process name</label><input type="text" id="w-processname" placeholder="เช่น Helium Leak Test"></div>
-          <div><label>M/C, JIG, Tool</label><input type="text" id="w-mctool" placeholder="เช่น Helium detector"></div>
-        </div>
-      </div>
-      <div class="wizard-step hidden" data-step="2">
-        <div class="grid2">
-          <div><label>Product characteristic</label><input type="text" id="w-prodchar" placeholder="เช่น ความหนาผนังตู้"></div>
-          <div><label>Process characteristic</label><input type="text" id="w-processchar" placeholder="เช่น Leak rate ระหว่างเชื่อม"></div>
-        </div>
-      </div>
-      <div class="wizard-step hidden" data-step="3">
-        <div class="grid2">
-          <div><label>Spec / Tolerance</label><input type="text" id="w-spec" placeholder="เช่น ≤ 0.5 g/year"></div>
-          <div><label>Document</label><input type="text" id="w-document" placeholder="เช่น WI-QC-014"></div>
-          <div><label>Evaluation</label><input type="text" id="w-evaluation" placeholder="เช่น Helium detector"></div>
-        </div>
-      </div>
-      <div class="wizard-step hidden" data-step="4">
-        <div class="grid2">
-          <div><label>จำนวน (Sample size)</label><input type="text" id="w-samplesize" placeholder="เช่น 100%"></div>
-          <div><label>ความถี่ (Frequency)</label><input type="text" id="w-frequency" placeholder="เช่น ทุกตัว"></div>
-        </div>
-      </div>
-      <div class="wizard-step hidden" data-step="5">
-        <div class="grid2">
-          <div><label>บันทึกคุณภาพ</label><input type="text" id="w-qualityrecord" placeholder="เช่น Leak test log sheet"></div>
-          <div><label>Owner</label><input type="text" id="w-owner" placeholder="เช่น QC Line"></div>
-          <div><label>Reaction</label><input type="text" id="w-reaction" placeholder="เช่น คัดแยก ซ่อม แจ้งหัวหน้างาน"></div>
-        </div>
+      <!-- Page 1: Process info + dynamic tools -->
+      <div class="wizard-page" data-page="1">
+        <label>Process name</label>
+        <input type="text" id="w-processname" placeholder="เช่น เชื่อมประกอบ Evaporator" style="margin-bottom:16px;">
+        <h3>M/C, JIG, Tool ที่ใช้</h3>
+        <div id="tool-rows"></div>
+        <button class="btn-sm" onclick="addTool()">+ เพิ่มเครื่องมือ</button>
       </div>
 
-      <div class="row-between" style="margin-top:8px;">
+      <!-- Page 2: repeatable characteristics -->
+      <div class="wizard-page hidden" data-page="2">
+        <div id="char-cards"></div>
+        <button class="btn-sm" onclick="addCharCard()">+ เพิ่ม Characteristic</button>
+      </div>
+
+      <div class="row-between" style="margin-top:16px;">
         <button id="wiz-back" onclick="wizBack()">ย้อนกลับ</button>
         <button id="wiz-next" class="btn-primary" onclick="wizNext()">ถัดไป</button>
       </div>
@@ -182,7 +172,7 @@
         <button onclick="toggleQaMode()" id="qa-toggle-btn">เข้าสู่โหมด QA</button>
       </div>
       <div id="qa-order-area" class="hidden" style="margin-top:16px;">
-        <p style="font-size:13px; color:var(--gray-600);">กำหนดลำดับ Process No. และ Characteristic No. ก่อนอนุมัติ (แก้เลขได้ตามผังการผลิตจริง)</p>
+        <p style="font-size:13px; color:var(--gray-600);">กำหนด Process No. (ต่อขั้นตอน) และ Characteristic No. (ต่อรายการย่อย) ก่อนอนุมัติ</p>
         <div id="qa-order-list"></div>
         <div style="text-align:right; margin-top:12px;">
           <button class="btn-primary" onclick="approveAll()">อนุมัติทั้งหมด</button>
@@ -204,14 +194,13 @@
       <h2>เสนอแก้ไขข้อมูล</h2>
       <div class="grid2">
         <div>
-          <label>เลือก step ที่ต้องการแก้ไข</label>
-          <select id="cr-step-select"></select>
+          <label>เลือก Characteristic ที่ต้องการแก้ไข</label>
+          <select id="cr-char-select"></select>
         </div>
         <div>
           <label>ต้องการแก้ field ไหน</label>
           <select id="cr-field-select">
             <option value="processName">Process name</option>
-            <option value="mcTool">M/C, JIG, Tool</option>
             <option value="productChar">Product characteristic</option>
             <option value="processChar">Process characteristic</option>
             <option value="spec">Spec / Tolerance</option>
@@ -251,7 +240,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import {
-  getDatabase, ref, push, set, update, onValue, get, remove, serverTimestamp
+  getDatabase, ref, push, set, update, onValue, get
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -265,6 +254,8 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
+function uid() { return Math.random().toString(36).slice(2, 10); }
 
 // ---------- User identity (simple name tag, not real auth) ----------
 let userName = localStorage.getItem('cpUserName') || '';
@@ -309,7 +300,7 @@ function openPlan(planId) {
   isQaMode = false;
   document.getElementById('qa-toggle-btn').textContent = 'เข้าสู่โหมด QA';
   document.getElementById('qa-order-area').classList.add('hidden');
-  wizStep = 1; renderWizard();
+  resetWizardState(); wizPage = 1; renderWizard();
 
   get(ref(db, 'controlPlans/' + planId + '/meta')).then(snap => {
     currentPlanMeta = snap.val() || {};
@@ -321,7 +312,7 @@ function openPlan(planId) {
     renderPendingSteps();
     renderPublishedTable();
     renderQaOrderList();
-    renderCrStepOptions();
+    renderCrCharOptions();
   });
   crListener = onValue(ref(db, 'controlPlans/' + planId + '/changeRequests'), snap => {
     currentChangeRequests = snap.val() || {};
@@ -395,50 +386,106 @@ function renderPlanHeader() {
   document.getElementById('log-card').classList.toggle('hidden', isPublished);
 }
 
-// ---------- Wizard ----------
-let wizStep = 1;
-const wizNames = ['ข้อมูลขั้นตอน', 'Characteristics', 'การควบคุม', 'การตรวจสอบ', 'บันทึกและ Reaction plan'];
-document.getElementById('wiz-dots').innerHTML = [1,2,3,4,5].map(n => `<div data-n="${n}"></div>`).join('');
+// ---------- Wizard state ----------
+let wizPage = 1;
+let wizTools = [];
+let wizChars = [];
+const pageNames = ['ข้อมูลขั้นตอน', 'Characteristics'];
+document.getElementById('wiz-dots').innerHTML = [1,2].map(n => `<div data-n="${n}"></div>`).join('');
+
+function blankChar() {
+  return { key: uid(), productChar:'', processChar:'', spec:'', document:'', evaluation:'', sampleSize:'', frequency:'', qualityRecord:'', owner:'', reaction:'' };
+}
+function resetWizardState() {
+  wizTools = [{ key: uid(), value: '' }];
+  wizChars = [blankChar()];
+  document.getElementById('w-processname').value = '';
+  renderToolRows();
+  renderCharCards();
+}
+
+function renderToolRows() {
+  const el = document.getElementById('tool-rows');
+  el.innerHTML = wizTools.map((t, i) => `
+    <div class="tool-row">
+      <input type="text" placeholder="เช่น Helium detector" value="${escapeAttr(t.value)}" oninput="updateTool('${t.key}', this.value)">
+      ${wizTools.length > 1 ? `<button class="btn-sm btn-danger" onclick="removeTool('${t.key}')">ลบ</button>` : ''}
+    </div>`).join('');
+}
+function addTool() { wizTools.push({ key: uid(), value: '' }); renderToolRows(); }
+function removeTool(key) { wizTools = wizTools.filter(t => t.key !== key); renderToolRows(); }
+function updateTool(key, val) { const t = wizTools.find(t => t.key === key); if (t) t.value = val; }
+
+function renderCharCards() {
+  const el = document.getElementById('char-cards');
+  el.innerHTML = wizChars.map((c, i) => `
+    <div class="char-card">
+      <div class="char-card-head">
+        <span>Characteristic ${i + 1}</span>
+        ${wizChars.length > 1 ? `<button class="btn-sm btn-danger" onclick="removeCharCard('${c.key}')">ลบ Characteristic นี้</button>` : ''}
+      </div>
+      <div class="grid2">
+        <div><label>Product characteristic</label><input type="text" value="${escapeAttr(c.productChar)}" oninput="updateChar('${c.key}','productChar',this.value)" placeholder="เช่น ความหนาผนังตู้"></div>
+        <div><label>Process characteristic</label><input type="text" value="${escapeAttr(c.processChar)}" oninput="updateChar('${c.key}','processChar',this.value)" placeholder="เช่น Leak rate ระหว่างเชื่อม"></div>
+      </div>
+      <div class="grid2">
+        <div><label>Spec / Tolerance</label><input type="text" value="${escapeAttr(c.spec)}" oninput="updateChar('${c.key}','spec',this.value)" placeholder="เช่น ≤ 0.5 g/year"></div>
+        <div><label>Document</label><input type="text" value="${escapeAttr(c.document)}" oninput="updateChar('${c.key}','document',this.value)" placeholder="เช่น WI-QC-014"></div>
+        <div><label>Evaluation</label><input type="text" value="${escapeAttr(c.evaluation)}" oninput="updateChar('${c.key}','evaluation',this.value)" placeholder="เช่น Helium detector"></div>
+      </div>
+      <div class="grid2">
+        <div><label>จำนวน (Sample size)</label><input type="text" value="${escapeAttr(c.sampleSize)}" oninput="updateChar('${c.key}','sampleSize',this.value)" placeholder="เช่น 100%"></div>
+        <div><label>ความถี่ (Frequency)</label><input type="text" value="${escapeAttr(c.frequency)}" oninput="updateChar('${c.key}','frequency',this.value)" placeholder="เช่น ทุกตัว"></div>
+      </div>
+      <div class="grid2" style="margin-bottom:0;">
+        <div><label>บันทึกคุณภาพ</label><input type="text" value="${escapeAttr(c.qualityRecord)}" oninput="updateChar('${c.key}','qualityRecord',this.value)" placeholder="เช่น Leak test log sheet"></div>
+        <div><label>Owner</label><input type="text" value="${escapeAttr(c.owner)}" oninput="updateChar('${c.key}','owner',this.value)" placeholder="เช่น QC Line"></div>
+        <div><label>Reaction</label><input type="text" value="${escapeAttr(c.reaction)}" oninput="updateChar('${c.key}','reaction',this.value)" placeholder="เช่น คัดแยก ซ่อม แจ้งหัวหน้างาน"></div>
+      </div>
+    </div>`).join('');
+}
+function addCharCard() { wizChars.push(blankChar()); renderCharCards(); }
+function removeCharCard(key) { wizChars = wizChars.filter(c => c.key !== key); renderCharCards(); }
+function updateChar(key, field, val) { const c = wizChars.find(c => c.key === key); if (c) c[field] = val; }
 
 function renderWizard() {
-  document.querySelectorAll('.wizard-step').forEach(el => {
-    el.classList.toggle('hidden', parseInt(el.dataset.step) !== wizStep);
+  document.querySelectorAll('.wizard-page').forEach(el => {
+    el.classList.toggle('hidden', parseInt(el.dataset.page) !== wizPage);
   });
   document.querySelectorAll('#wiz-dots div').forEach(el => {
-    el.classList.toggle('done', parseInt(el.dataset.n) <= wizStep);
+    el.classList.toggle('done', parseInt(el.dataset.n) <= wizPage);
   });
-  document.getElementById('wiz-label').textContent = 'ขั้นตอนที่ ' + wizStep + ' จาก 5 \u00b7 ' + wizNames[wizStep - 1];
-  document.getElementById('wiz-next').textContent = wizStep === 5 ? 'บันทึก step นี้' : 'ถัดไป';
+  document.getElementById('wiz-label').textContent = 'ขั้นตอนที่ ' + wizPage + ' จาก 2 \u00b7 ' + pageNames[wizPage - 1];
+  document.getElementById('wiz-next').textContent = wizPage === 2 ? 'บันทึก Process step นี้' : 'ถัดไป';
 }
-function wizBack() { if (wizStep > 1) { wizStep--; renderWizard(); } }
+function wizBack() { if (wizPage > 1) { wizPage--; renderWizard(); } }
 function wizNext() {
-  if (wizStep < 5) { wizStep++; renderWizard(); return; }
+  if (wizPage === 1) {
+    if (!document.getElementById('w-processname').value.trim()) { alert('กรอก Process name ก่อนนะครับ'); return; }
+    wizPage = 2; renderWizard(); return;
+  }
   saveStep();
 }
 function saveStep() {
   promptUserName(false);
+  const toolsObj = {};
+  wizTools.forEach(t => { if (t.value.trim()) toolsObj[t.key] = t.value.trim(); });
+  const charsObj = {};
+  wizChars.forEach(c => {
+    charsObj[c.key] = {
+      productChar: c.productChar.trim(), processChar: c.processChar.trim(), spec: c.spec.trim(),
+      document: c.document.trim(), evaluation: c.evaluation.trim(), sampleSize: c.sampleSize.trim(),
+      frequency: c.frequency.trim(), qualityRecord: c.qualityRecord.trim(), owner: c.owner.trim(), reaction: c.reaction.trim()
+    };
+  });
   const step = {
     processName: document.getElementById('w-processname').value.trim(),
-    mcTool: document.getElementById('w-mctool').value.trim(),
-    productChar: document.getElementById('w-prodchar').value.trim(),
-    processChar: document.getElementById('w-processchar').value.trim(),
-    spec: document.getElementById('w-spec').value.trim(),
-    document: document.getElementById('w-document').value.trim(),
-    evaluation: document.getElementById('w-evaluation').value.trim(),
-    sampleSize: document.getElementById('w-samplesize').value.trim(),
-    frequency: document.getElementById('w-frequency').value.trim(),
-    qualityRecord: document.getElementById('w-qualityrecord').value.trim(),
-    owner: document.getElementById('w-owner').value.trim(),
-    reaction: document.getElementById('w-reaction').value.trim(),
-    enteredBy: userName || 'ไม่ระบุชื่อ',
-    enteredAt: Date.now()
+    tools: toolsObj, characteristics: charsObj,
+    enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
   };
-  if (!step.processName) { alert('อย่างน้อยต้องกรอก Process name นะครับ'); wizStep = 1; renderWizard(); return; }
   const newRef = push(ref(db, 'controlPlans/' + currentPlanId + '/steps'));
   set(newRef, step).then(() => {
-    ['w-processname','w-mctool','w-prodchar','w-processchar','w-spec','w-document','w-evaluation',
-     'w-samplesize','w-frequency','w-qualityrecord','w-owner','w-reaction'].forEach(id => document.getElementById(id).value = '');
-    wizStep = 1; renderWizard();
+    resetWizardState(); wizPage = 1; renderWizard();
   });
 }
 
@@ -451,10 +498,12 @@ function renderPendingSteps() {
   ids.sort((a,b) => (currentSteps[a].enteredAt||0) - (currentSteps[b].enteredAt||0));
   el.innerHTML = ids.map(id => {
     const s = currentSteps[id];
+    const toolCount = Object.keys(s.tools || {}).length;
+    const charCount = Object.keys(s.characteristics || {}).length;
     return `<div class="step-item">
       <div>
         <p>${escapeHtml(s.processName)}</p>
-        <p class="meta">กรอกโดย ${escapeHtml(s.enteredBy || '-')} \u00b7 ${formatTime(s.enteredAt)}</p>
+        <p class="meta">เครื่องมือ ${toolCount} รายการ \u00b7 Characteristic ${charCount} รายการ \u00b7 กรอกโดย ${escapeHtml(s.enteredBy || '-')} \u00b7 ${formatTime(s.enteredAt)}</p>
       </div>
       <span class="badge badge-pending">รอตรวจ</span>
     </div>`;
@@ -470,23 +519,36 @@ function renderQaOrderList() {
   ids.sort((a,b) => (currentSteps[a].enteredAt||0) - (currentSteps[b].enteredAt||0));
   el.innerHTML = ids.map((id, i) => {
     const s = currentSteps[id];
-    return `<div class="order-row">
-      <input type="text" data-id="${id}" data-role="processno" value="${(i+1)*10}">
-      <span>${escapeHtml(s.processName)} &mdash; ${escapeHtml(s.productChar || s.processChar || '')}</span>
-      <input type="text" data-id="${id}" data-role="charno" value="${i+1}">
+    const charIds = Object.keys(s.characteristics || {});
+    const charRows = charIds.map((ck, ci) => {
+      const c = s.characteristics[ck];
+      return `<div class="order-char-row">
+        <input type="text" data-stepid="${id}" data-charid="${ck}" data-role="charno" value="${ci+1}">
+        <span>${escapeHtml(c.productChar || c.processChar || '(ไม่ระบุชื่อ characteristic)')}</span>
+      </div>`;
+    }).join('');
+    return `<div class="order-process">
+      <div class="order-process-head">
+        <input type="text" data-stepid="${id}" data-role="processno" value="${(i+1)*10}">
+        <span style="font-weight:600;">${escapeHtml(s.processName)}</span>
+      </div>
+      ${charRows}
     </div>`;
   }).join('');
 }
 function approveAll() {
-  const rows = document.querySelectorAll('#qa-order-list .order-row');
-  if (!rows.length) { alert('ไม่มี step ให้อนุมัติ'); return; }
+  const processBlocks = document.querySelectorAll('#qa-order-list .order-process');
+  if (!processBlocks.length) { alert('ไม่มี step ให้อนุมัติ'); return; }
   promptUserName(false);
   const updates = {};
-  rows.forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    const stepId = inputs[0].dataset.id;
-    updates['controlPlans/' + currentPlanId + '/steps/' + stepId + '/processNo'] = inputs[0].value.trim();
-    updates['controlPlans/' + currentPlanId + '/steps/' + stepId + '/charNo'] = inputs[1].value.trim();
+  processBlocks.forEach(block => {
+    const procInput = block.querySelector('[data-role="processno"]');
+    const stepId = procInput.dataset.stepid;
+    updates['controlPlans/' + currentPlanId + '/steps/' + stepId + '/processNo'] = procInput.value.trim();
+    block.querySelectorAll('[data-role="charno"]').forEach(charInput => {
+      const charId = charInput.dataset.charid;
+      updates['controlPlans/' + currentPlanId + '/steps/' + stepId + '/characteristics/' + charId + '/charNo'] = charInput.value.trim();
+    });
   });
   updates['controlPlans/' + currentPlanId + '/meta/status'] = 'published';
   updates['controlPlans/' + currentPlanId + '/meta/publishedBy'] = userName || 'ไม่ระบุชื่อ';
@@ -502,39 +564,72 @@ function approveAll() {
 // ---------- Published table + Excel export ----------
 function sortedApprovedSteps() {
   const ids = Object.keys(currentSteps || {}).filter(id => currentSteps[id].processNo);
-  ids.sort((a,b) => parseFloat(currentSteps[a].processNo) - parseFloat(currentSteps[b].processNo)
-                  || parseFloat(currentSteps[a].charNo) - parseFloat(currentSteps[b].charNo));
+  ids.sort((a,b) => parseFloat(currentSteps[a].processNo) - parseFloat(currentSteps[b].processNo));
+  return ids;
+}
+function charRowsOf(step) {
+  const ids = Object.keys(step.characteristics || {});
+  ids.sort((a,b) => parseFloat(step.characteristics[a].charNo||0) - parseFloat(step.characteristics[b].charNo||0));
   return ids;
 }
 function renderPublishedTable() {
   if (currentPlanMeta?.status !== 'published') return;
-  const ids = sortedApprovedSteps();
+  const stepIds = sortedApprovedSteps();
   const headers = ['Process No.','Process name','M/C, JIG, Tool','No.','Product char.','Process char.','Spec/Tolerance','Document','Evaluation','จำนวน','ความถี่','บันทึกคุณภาพ','Owner','Reaction'];
   let html = '<table class="export-preview"><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
-  ids.forEach(id => {
+  stepIds.forEach(id => {
     const s = currentSteps[id];
-    html += '<tr>' + [s.processNo, s.processName, s.mcTool, s.charNo, s.productChar, s.processChar, s.spec, s.document, s.evaluation, s.sampleSize, s.frequency, s.qualityRecord, s.owner, s.reaction]
-      .map(v => `<td>${escapeHtml(v || '')}</td>`).join('') + '</tr>';
+    const tools = Object.values(s.tools || {}).join(', ');
+    const charIds = charRowsOf(s);
+    charIds.forEach((ck, i) => {
+      const c = s.characteristics[ck];
+      html += '<tr>' + [
+        i === 0 ? s.processNo : '', i === 0 ? s.processName : '', i === 0 ? tools : '',
+        c.charNo, c.productChar, c.processChar, c.spec, c.document, c.evaluation, c.sampleSize, c.frequency, c.qualityRecord, c.owner, c.reaction
+      ].map(v => `<td>${escapeHtml(v || '')}</td>`).join('') + '</tr>';
+    });
   });
   html += '</table>';
   document.getElementById('published-table-wrap').innerHTML = html;
 }
 function exportToExcel() {
-  const ids = sortedApprovedSteps();
+  const stepIds = sortedApprovedSteps();
   const m = currentPlanMeta || {};
   const headerRow1 = ['Process No.\nขั้นตอน','Process Name\nชื่อกระบวนการ','M/C Device , JIG ,TOOL\nเครื่องจักร/เครื่องมือ ที่ใช้ในกระบวนการ','Process / Production Control Method','','','','','','','','','',''];
   const headerRow2 = ['','','','Characteristics','','','Process Spec/Telorance','Document','Evaluation\nวิธีการตรวจสอบ','การตรวจสอบ','','บันทึกคุณภาพ','Reaction Plan',''];
   const headerRow3 = ['','','','No.','Product','Process','มาตรฐานการตรวจสอบ','','','จำนวน','ความถี่','','Owner','Reaction'];
-  const dataRows = ids.map(id => {
+  const wsData = [headerRow1, headerRow2, headerRow3];
+  const bodyMerges = [];
+  let r = 3;
+  stepIds.forEach(id => {
     const s = currentSteps[id];
-    return [s.processNo, s.processName, s.mcTool, s.charNo, s.productChar, s.processChar, s.spec, s.document, s.evaluation, s.sampleSize, s.frequency, s.qualityRecord, s.owner, s.reaction];
+    const tools = Object.values(s.tools || {}).join('\n');
+    const charIds = charRowsOf(s);
+    const startRow = r;
+    if (!charIds.length) {
+      wsData.push([s.processNo, s.processName, tools, '', '', '', '', '', '', '', '', '', '', '']);
+      r += 1;
+    } else {
+      charIds.forEach((ck, i) => {
+        const c = s.characteristics[ck];
+        wsData.push([
+          i === 0 ? s.processNo : '', i === 0 ? s.processName : '', i === 0 ? tools : '',
+          c.charNo, c.productChar, c.processChar, c.spec, c.document, c.evaluation, c.sampleSize, c.frequency, c.qualityRecord, c.owner, c.reaction
+        ]);
+        r += 1;
+      });
+    }
+    if (r - startRow > 1) {
+      bodyMerges.push({s:{r:startRow,c:0},e:{r:r-1,c:0}});
+      bodyMerges.push({s:{r:startRow,c:1},e:{r:r-1,c:1}});
+      bodyMerges.push({s:{r:startRow,c:2},e:{r:r-1,c:2}});
+    }
   });
-  const wsData = [headerRow1, headerRow2, headerRow3, ...dataRows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!merges'] = [
     {s:{r:0,c:0},e:{r:2,c:0}}, {s:{r:0,c:1},e:{r:2,c:1}}, {s:{r:0,c:2},e:{r:2,c:2}}, {s:{r:0,c:3},e:{r:0,c:13}},
     {s:{r:1,c:3},e:{r:1,c:5}}, {s:{r:1,c:6},e:{r:2,c:6}}, {s:{r:1,c:7},e:{r:2,c:7}}, {s:{r:1,c:8},e:{r:2,c:8}},
-    {s:{r:1,c:9},e:{r:1,c:10}}, {s:{r:1,c:11},e:{r:2,c:11}}, {s:{r:1,c:12},e:{r:1,c:13}}
+    {s:{r:1,c:9},e:{r:1,c:10}}, {s:{r:1,c:11},e:{r:2,c:11}}, {s:{r:1,c:12},e:{r:1,c:13}}, ...bodyMerges
   ];
   ws['!cols'] = [{wch:10},{wch:18},{wch:20},{wch:6},{wch:18},{wch:18},{wch:18},{wch:12},{wch:16},{wch:8},{wch:10},{wch:16},{wch:12},{wch:16}];
   const wb = XLSX.utils.book_new();
@@ -544,22 +639,32 @@ function exportToExcel() {
 }
 
 // ---------- Change requests ----------
-function renderCrStepOptions() {
-  const ids = sortedApprovedSteps();
-  const sel = document.getElementById('cr-step-select');
-  sel.innerHTML = ids.map(id => `<option value="${id}">${escapeHtml(currentSteps[id].processNo)} \u00b7 ${escapeHtml(currentSteps[id].processName)}</option>`).join('');
+function renderCrCharOptions() {
+  const stepIds = sortedApprovedSteps();
+  const sel = document.getElementById('cr-char-select');
+  const opts = [];
+  stepIds.forEach(id => {
+    const s = currentSteps[id];
+    charRowsOf(s).forEach(ck => {
+      const c = s.characteristics[ck];
+      opts.push(`<option value="${id}::${ck}">${escapeHtml(s.processNo)}.${escapeHtml(c.charNo)} \u00b7 ${escapeHtml(s.processName)} / ${escapeHtml(c.productChar || c.processChar || '')}</option>`);
+    });
+  });
+  sel.innerHTML = opts.join('');
 }
 function submitChangeRequest() {
-  const stepId = document.getElementById('cr-step-select').value;
+  const raw = document.getElementById('cr-char-select').value;
+  if (!raw) { alert('เลือก Characteristic ก่อนนะครับ'); return; }
+  const [stepId, charId] = raw.split('::');
   const field = document.getElementById('cr-field-select').value;
   const newValue = document.getElementById('cr-newvalue').value.trim();
   const reason = document.getElementById('cr-reason').value.trim();
-  if (!stepId || !newValue) { alert('เลือก step และกรอกค่าใหม่ก่อนนะครับ'); return; }
+  if (!newValue) { alert('กรอกค่าใหม่ก่อนนะครับ'); return; }
   promptUserName(false);
+  const oldValue = field === 'processName' ? (currentSteps[stepId]?.processName || '') : (currentSteps[stepId]?.characteristics?.[charId]?.[field] || '');
   const crRef = push(ref(db, 'controlPlans/' + currentPlanId + '/changeRequests'));
   set(crRef, {
-    stepId, field, newValue, reason,
-    oldValue: currentSteps[stepId]?.[field] || '',
+    stepId, charId, field, newValue, oldValue,
     requestedBy: userName || 'ไม่ระบุชื่อ', requestedAt: Date.now(), status: 'pending'
   }).then(() => {
     document.getElementById('cr-newvalue').value = '';
@@ -593,7 +698,12 @@ function decideChangeRequest(crId, accept) {
   updates['controlPlans/' + currentPlanId + '/changeRequests/' + crId + '/status'] = accept ? 'accepted' : 'rejected';
   updates['controlPlans/' + currentPlanId + '/changeRequests/' + crId + '/decidedBy'] = userName || 'ไม่ระบุชื่อ';
   updates['controlPlans/' + currentPlanId + '/changeRequests/' + crId + '/decidedAt'] = Date.now();
-  if (accept) updates['controlPlans/' + currentPlanId + '/steps/' + c.stepId + '/' + c.field] = c.newValue;
+  if (accept) {
+    const path = c.field === 'processName'
+      ? 'controlPlans/' + currentPlanId + '/steps/' + c.stepId + '/processName'
+      : 'controlPlans/' + currentPlanId + '/steps/' + c.stepId + '/characteristics/' + c.charId + '/' + c.field;
+    updates[path] = c.newValue;
+  }
   update(ref(db), updates).then(() => {
     const logRef = push(ref(db, 'controlPlans/' + currentPlanId + '/approvalLog'));
     set(logRef, {
@@ -619,13 +729,14 @@ function renderLog(logs) {
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
+function escapeAttr(str) { return escapeHtml(str); }
 function formatTime(ts) {
   if (!ts) return '-';
   const d = new Date(ts);
   return d.toLocaleDateString('th-TH') + ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
 }
 
-// Expose functions needed by inline onclick handlers
+// Expose functions needed by inline onclick/oninput handlers
 window.promptUserName = promptUserName;
 window.toggleQaMode = toggleQaMode;
 window.goToPlansList = goToPlansList;
@@ -635,10 +746,18 @@ window.hideNewPlanForm = hideNewPlanForm;
 window.createPlan = createPlan;
 window.wizBack = wizBack;
 window.wizNext = wizNext;
+window.addTool = addTool;
+window.removeTool = removeTool;
+window.updateTool = updateTool;
+window.addCharCard = addCharCard;
+window.removeCharCard = removeCharCard;
+window.updateChar = updateChar;
 window.approveAll = approveAll;
 window.exportToExcel = exportToExcel;
 window.submitChangeRequest = submitChangeRequest;
 window.decideChangeRequest = decideChangeRequest;
+
+resetWizardState();
 </script>
 </body>
 </html>
