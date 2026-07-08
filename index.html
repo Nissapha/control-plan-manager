@@ -92,7 +92,8 @@ input[type=text], input[type=number], input[type=date], select{
 .process-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;}
 .process-name{font-size:15px; font-weight:700; color:var(--navy);}
 .process-tools{font-size:12px; color:var(--ink-faint); margin-top:2px;}
-.process-badges{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+.process-badges{display:flex; gap:14px; flex-wrap:wrap; align-items:center;}
+.process-badge-group{display:flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--line); border-radius:10px; background:#FAFCFD;}
 .expand-area{margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft); overflow-x:auto;}
 .expand-area h4{font-size:11.5px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.04em; margin:0 0 6px;}
 .expand-area h4:not(:first-child){margin-top:14px;}
@@ -439,10 +440,14 @@ function renderProcessList() {
         </div>
       </div>
       <div class="process-badges">
-        <span class="badge ${fmCount ? 'badge-teal' : 'badge-slate'}">FMEA (${fmCount})</span>
-        <button class="btn btn-sm btn-ghost" onclick="openFmeaModal('${id}')">+ สร้าง FMEA</button>
-        <span class="badge ${chCount ? 'badge-teal' : 'badge-slate'}">Control Plan (${chCount})</span>
-        <button class="btn btn-sm btn-ghost" onclick="openCharModal('${id}')">+ สร้าง Characteristic</button>
+        <div class="process-badge-group">
+          <span class="badge ${fmCount ? 'badge-teal' : 'badge-slate'}">FMEA (${fmCount})</span>
+          <button class="btn btn-sm btn-ghost" onclick="openFmeaModal('${id}')">+ สร้าง FMEA</button>
+        </div>
+        <div class="process-badge-group">
+          <span class="badge ${chCount ? 'badge-teal' : 'badge-slate'}">Control Plan (${chCount})</span>
+          <button class="btn btn-sm btn-ghost" onclick="openCharModal('${id}')">+ สร้าง Characteristic</button>
+        </div>
       </div>
       ${expandHtml}
       </div>
