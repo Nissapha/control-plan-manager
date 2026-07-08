@@ -189,7 +189,7 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
 
   <!-- ===== TAB: FMEA ===== -->
   <div id="tab-fmea" class="hidden">
-    <div class="note" style="color:#1D7468; background:var(--teal-soft);">Action Priority (AP) คำนวณอัตโนมัติจากตาราง AIAG-VDA ที่ยืนยันแล้ว &mdash; กรอก Severity, Occurrence, Detection ให้ครบ ระบบจะขึ้น AP ให้ทันที</div>
+    <div class="note" style="color:#1D7468; background:var(--teal-soft);">Action Priority (AP) คำนวณอัตโนมัติจากตาราง AP_LogicTable ของบริษัท (ตาม FMEA_Form.xlsx) &mdash; กรอก Severity, Occurrence, Detection ให้ครบ ระบบจะขึ้น AP ให้ทันที</div>
     <div class="panel">
       <div class="row-between" style="margin-bottom:0;">
         <h2 style="margin:0;">Export FMEA สำหรับสินค้า</h2>
@@ -401,16 +401,16 @@ function renderProcessList() {
     const expanded = !!expandedProcesses[id];
     let expandHtml = '';
     if (expanded) {
-      const fmEntries = Object.entries(p.fmea || {}).sort((a,b) => (parseFloat(a[1].fmNo)||0) - (parseFloat(b[1].fmNo)||0));
+      const fmEntries = Object.entries(p.fmea || {}).sort((a,b) => activityTime(b[1]) - activityTime(a[1]));
       const fmTable = fmEntries.length ? `<table class="mini-table"><tr>
-        <th style="width:4%;">No.</th><th style="width:12%;">Failure Mode</th><th style="width:12%;">Effect</th><th style="width:3%;">S</th>
-        <th style="width:12%;">Cause</th><th style="width:3%;">O</th><th style="width:12%;">Prevention</th><th style="width:12%;">Detection Control</th>
-        <th style="width:3%;">D</th><th style="width:4%;">AP</th><th style="width:11%;">Recommended Action</th><th style="width:9%;">Responsible</th><th style="width:7%;">Target date</th><th style="width:6%;">Status</th>
+        <th style="width:9%;">Sub-Process</th><th style="width:14%;">Failure Effect</th><th style="width:4%;">S</th>
+        <th style="width:14%;">Failure Mode</th><th style="width:14%;">Failure Cause</th><th style="width:14%;">Prevention Control</th><th style="width:4%;">O</th>
+        <th style="width:14%;">Current Detection</th><th style="width:4%;">D</th><th style="width:5%;">AP</th>
       </tr>${fmEntries.map(([fmId,f]) => `<tr>
-        <td class="no-cell"><a class="no-link" onclick="openFmeaModal('${id}','${fmId}')">${escapeHtml(f.fmNo)}</a></td>
-        <td>${nl2br(f.failureMode)}</td><td>${nl2br(f.effect)}</td><td>${escapeHtml(f.severity)}</td>
-        <td>${nl2br(f.cause)}</td><td>${escapeHtml(f.occurrence)}</td><td>${nl2br(f.prevention)}</td><td>${nl2br(f.detectionControl)}</td>
-        <td>${escapeHtml(f.detection)}</td><td>${escapeHtml(f.ap)}</td><td>${nl2br(f.recommendedAction)}</td><td>${escapeHtml(f.responsible)}</td><td>${escapeHtml(f.targetDate)}</td><td>${escapeHtml(f.status)}</td>
+        <td>${nl2br(f.subProcess)}</td><td>${nl2br(f.effect)}</td><td>${escapeHtml(f.severity)}</td>
+        <td class="no-cell"><a class="no-link" onclick="openFmeaModal('${id}','${fmId}')">${nl2br(f.failureMode)}</a></td>
+        <td>${nl2br(f.cause)}</td><td>${nl2br(f.prevention)}</td><td>${escapeHtml(f.occurrence)}</td>
+        <td>${nl2br(f.detectionControl)}</td><td>${escapeHtml(f.detection)}</td><td>${escapeHtml(f.ap)}</td>
       </tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Mode</p>';
       const charEntriesList = Object.entries(p.controlPlan?.chars || {}).sort((a,b) => (parseFloat(a[1].charNo)||0) - (parseFloat(b[1].charNo)||0));
       const chTable = charEntriesList.length ? `<table class="mini-table"><tr>
@@ -507,48 +507,26 @@ function getByPath(path) {
 }
 
 // ================= FMEA (global tab) =================
-// ---------- Action Priority (AP) — AIAG-VDA table, verified against source PDF ----------
-const AP_TABLE = {
-  S9_10: {
-    O8_10: {D7_10:'H', D5_6:'H', D2_4:'H', D1:'H'},
-    O6_7:  {D7_10:'H', D5_6:'H', D2_4:'H', D1:'H'},
-    O4_5:  {D7_10:'H', D5_6:'H', D2_4:'H', D1:'M'},
-    O2_3:  {D7_10:'H', D5_6:'H', D2_4:'H', D1:'L'},
-    O1: 'L'
-  },
-  S7_8: {
-    O8_10: {D7_10:'H', D5_6:'H', D2_4:'H', D1:'H'},
-    O6_7:  {D7_10:'H', D5_6:'H', D2_4:'H', D1:'M'},
-    O4_5:  {D7_10:'H', D5_6:'M', D2_4:'M', D1:'M'},
-    O2_3:  {D7_10:'M', D5_6:'M', D2_4:'L', D1:'L'},
-    O1: 'L'
-  },
-  S4_6: {
-    O8_10: {D7_10:'H', D5_6:'H', D2_4:'M', D1:'M'},
-    O6_7:  {D7_10:'M', D5_6:'M', D2_4:'M', D1:'L'},
-    O4_5:  {D7_10:'M', D5_6:'L', D2_4:'L', D1:'L'},
-    O2_3:  {D7_10:'L', D5_6:'L', D2_4:'L', D1:'L'},
-    O1: 'L'
-  },
-  S2_3: {
-    O8_10: {D7_10:'M', D5_6:'M', D2_4:'L', D1:'L'},
-    O6_7:  {D7_10:'L', D5_6:'L', D2_4:'L', D1:'L'},
-    O4_5:  {D7_10:'L', D5_6:'L', D2_4:'L', D1:'L'},
-    O2_3:  {D7_10:'L', D5_6:'L', D2_4:'L', D1:'L'},
-    O1: 'L'
-  },
-  S1: 'L'
+// ---------- Action Priority (AP) — company's official AP_LogicTable (from FMEA_Form.xlsx), verified for internal consistency ----------
+const AP_LOOKUP = {
+ '111':'L', '112':'L', '113':'L', '114':'L', '121':'L', '122':'L', '123':'L', '124':'L', '131':'L', '132':'L',
+ '133':'L', '134':'L', '141':'L', '142':'L', '143':'L', '144':'L', '151':'L', '152':'M', '153':'M', '154':'M',
+ '211':'L', '212':'L', '213':'L', '214':'L', '221':'L', '222':'L', '223':'L', '224':'L', '231':'L', '232':'L',
+ '233':'L', '234':'L', '241':'L', '242':'L', '243':'L', '244':'L', '251':'L', '252':'M', '253':'M', '254':'M',
+ '311':'L', '312':'L', '313':'L', '314':'L', '321':'L', '322':'L', '323':'L', '324':'L', '331':'L', '332':'L',
+ '333':'L', '334':'M', '341':'M', '342':'M', '343':'H', '344':'H', '351':'M', '352':'M', '353':'H', '354':'H',
+ '411':'L', '412':'L', '413':'L', '414':'L', '421':'L', '422':'L', '423':'M', '424':'M', '431':'M', '432':'H',
+ '433':'H', '434':'H', '441':'M', '442':'H', '443':'H', '444':'H', '451':'M', '452':'H', '453':'H', '454':'H',
+ '511':'L', '512':'L', '513':'M', '514':'M', '521':'L', '522':'L', '523':'M', '524':'M', '531':'H', '532':'H',
+ '533':'H', '534':'H', '541':'H', '542':'H', '543':'H', '544':'H', '551':'H', '552':'H', '553':'H', '554':'H',
 };
-function sBand(s) { s = parseFloat(s)||0; if (s>=9) return 'S9_10'; if (s>=7) return 'S7_8'; if (s>=4) return 'S4_6'; if (s>=2) return 'S2_3'; return 'S1'; }
-function oBand(o) { o = parseFloat(o)||0; if (o>=8) return 'O8_10'; if (o>=6) return 'O6_7'; if (o>=4) return 'O4_5'; if (o>=2) return 'O2_3'; return 'O1'; }
-function dBand(d) { d = parseFloat(d)||0; if (d>=7) return 'D7_10'; if (d>=5) return 'D5_6'; if (d>=2) return 'D2_4'; return 'D1'; }
+function sBandIdx(s) { s = parseFloat(s)||0; if (s>=9) return 5; if (s>=7) return 4; if (s>=4) return 3; if (s>=2) return 2; return 1; }
+function oBandIdx(o) { o = parseFloat(o)||0; if (o>=8) return 5; if (o>=6) return 4; if (o>=4) return 3; if (o>=2) return 2; return 1; }
+function dBandIdx(d) { d = parseFloat(d)||0; if (d>=7) return 4; if (d>=5) return 3; if (d>=2) return 2; return 1; }
 function calcAP(s, o, d) {
   if (!s || !o || !d) return '';
-  const sb = sBand(s);
-  if (sb === 'S1') return 'L';
-  const entry = AP_TABLE[sb][oBand(o)];
-  if (oBand(o) === 'O1') return entry;
-  return entry[dBand(d)];
+  const key = '' + sBandIdx(s) + oBandIdx(o) + dBandIdx(d);
+  return AP_LOOKUP[key] || '';
 }
 function apBadgeCls(ap) { return ap === 'H' ? 'badge-coral' : (ap === 'M' ? 'badge-amber' : (ap === 'L' ? 'badge-teal' : 'badge-slate')); }
 function apBadgeLabel(ap) { return ap === 'H' ? 'H (สูง)' : (ap === 'M' ? 'M (กลาง)' : (ap === 'L' ? 'L (ต่ำ)' : 'กรอก S, O, D ให้ครบก่อน')); }
@@ -562,16 +540,10 @@ function updateApPreview() {
 }
 
 const FM_LABELS = {
-  fmNo:'Failure Mode No.', failureMode:'Potential Failure Mode', effect:'Potential Effect(s)', severity:'Severity (S)',
-  cause:'Potential Cause(s)', occurrence:'Occurrence (O)', prevention:'Current Prevention Control',
-  detectionControl:'Current Detection Control', detection:'Detection (D)', ap:'Action Priority (AP)',
-  recommendedAction:'Recommended Action', responsible:'Responsible', targetDate:'Target date', status:'Status'
+  subProcess:'Sub-Process', effect:'Failure Effect (FE)', severity:'Severity (S)', failureMode:'Failure Mode (FM)',
+  cause:'Failure Cause (FC)', prevention:'Prevention Control', occurrence:'Occurrence (O)',
+  detectionControl:'Current Detection', detection:'Detection (D)', ap:'AP'
 };
-function nextFmNoFor(pid) {
-  const fms = allProcesses[pid]?.fmea || {};
-  const nums = Object.values(fms).map(f => parseFloat(f.fmNo) || 0);
-  return (nums.length ? Math.max(...nums) : 0) + 1;
-}
 function flattenFmea() {
   const rows = [];
   Object.keys(allProcesses).forEach(pid => {
@@ -580,7 +552,7 @@ function flattenFmea() {
   rows.sort((a,b) => {
     const pDiff = (parseFloat(allProcesses[a.pid]?.processNo)||0) - (parseFloat(allProcesses[b.pid]?.processNo)||0);
     if (pDiff !== 0) return pDiff;
-    return (parseFloat(a.fmNo)||0) - (parseFloat(b.fmNo)||0);
+    return activityTime(b) - activityTime(a);
   });
   return rows;
 }
@@ -588,42 +560,31 @@ function openFmeaModal(pid, fmId) {
   const f = (pid && fmId) ? allProcesses[pid].fmea[fmId] : null;
   const isEdit = !!f;
   showModal(`
-    <h2>${isEdit ? 'แก้ไข Potential Failure Mode' : 'สร้าง Potential Failure Mode ใหม่'}</h2>
+    <h2>${isEdit ? 'แก้ไข Failure Mode' : 'สร้าง Failure Mode ใหม่'}</h2>
     ${isEdit ? `<p style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">Process: <b>${escapeHtml(processLabel(pid))}</b></p>`
-              : `<div style="margin-bottom:12px;"><label>เลือก Process</label><select id="mfm-process" onchange="onFmeaModalProcessChange()">${processOptionsHtml(pid)}</select></div>`}
-    <div class="grid3" style="margin-bottom:12px;"><div><label>Failure Mode No.</label><input type="text" id="mfm-fmno" value="${f?escapeHtml(f.fmNo):nextFmNoFor(pid||sortedProcessIds()[0])}" style="width:100px;"></div></div>
-    <h3>ความล้มเหลวและผลกระทบ</h3>
+              : `<div style="margin-bottom:12px;"><label>เลือก Process</label><select id="mfm-process">${processOptionsHtml(pid)}</select></div>`}
+    <div class="grid2" style="margin-bottom:12px;"><div><label>Sub-Process</label><input type="text" id="mfm-subprocess" value="${f?escapeHtml(f.subProcess):''}" placeholder="เช่น สถานีที่ 3 - เชื่อมตะเข็บ"></div></div>
+    <h3>ผลกระทบและความรุนแรง</h3>
     <div class="grid2">
-      <div><label>Potential Failure Mode</label><textarea id="mfm-failuremode">${f?escapeHtml(f.failureMode):''}</textarea></div>
-      <div><label>Potential Effect(s)</label><textarea id="mfm-effect">${f?escapeHtml(f.effect):''}</textarea></div>
+      <div><label>Failure Effect (FE)</label><textarea id="mfm-effect">${f?escapeHtml(f.effect):''}</textarea></div>
+      <div><label>Severity (S) 1-10</label><input type="number" id="mfm-severity" min="1" max="10" value="${f?escapeHtml(f.severity):''}" oninput="updateApPreview()"></div>
     </div>
-    <div class="grid3"><div><label>Severity (S) 1-10</label><input type="number" id="mfm-severity" min="1" max="10" value="${f?escapeHtml(f.severity):''}" oninput="updateApPreview()"></div></div>
-    <h3>สาเหตุ</h3>
+    <h3>ความล้มเหลวและสาเหตุ</h3>
     <div class="grid2">
-      <div><label>Potential Cause(s)</label><textarea id="mfm-cause">${f?escapeHtml(f.cause):''}</textarea></div>
+      <div><label>Failure Mode (FM)</label><textarea id="mfm-failuremode">${f?escapeHtml(f.failureMode):''}</textarea></div>
+      <div><label>Failure Cause (FC)</label><textarea id="mfm-cause">${f?escapeHtml(f.cause):''}</textarea></div>
+    </div>
+    <h3>การป้องกันและโอกาสเกิด</h3>
+    <div class="grid2">
+      <div><label>Prevention Control</label><textarea id="mfm-prevention">${f?escapeHtml(f.prevention):''}</textarea></div>
       <div><label>Occurrence (O) 1-10</label><input type="number" id="mfm-occurrence" min="1" max="10" value="${f?escapeHtml(f.occurrence):''}" oninput="updateApPreview()"></div>
     </div>
-    <h3>การควบคุมปัจจุบัน</h3>
+    <h3>การตรวจจับ</h3>
     <div class="grid2">
-      <div><label>Current Prevention Control</label><textarea id="mfm-prevention">${f?escapeHtml(f.prevention):''}</textarea></div>
-      <div><label>Current Detection Control</label><textarea id="mfm-detectioncontrol">${f?escapeHtml(f.detectionControl):''}</textarea></div>
-    </div>
-    <div class="grid3">
+      <div><label>Current Detection</label><textarea id="mfm-detectioncontrol">${f?escapeHtml(f.detectionControl):''}</textarea></div>
       <div><label>Detection (D) 1-10</label><input type="number" id="mfm-detection" min="1" max="10" value="${f?escapeHtml(f.detection):''}" oninput="updateApPreview()"></div>
-      <div><label>Action Priority (AP) &mdash; คำนวณอัตโนมัติ</label><div style="height:36px; display:flex; align-items:center;"><span class="badge badge-slate" id="mfm-ap-display">กรอก S, O, D ให้ครบก่อน</span></div></div>
     </div>
-    <h3>มาตรการและติดตาม</h3>
-    <div class="grid2">
-      <div><label>Recommended Action</label><textarea id="mfm-recommendedaction">${f?escapeHtml(f.recommendedAction):''}</textarea></div>
-      <div><label>Responsible</label><input type="text" id="mfm-responsible" value="${f?escapeHtml(f.responsible):''}"></div>
-    </div>
-    <div class="grid2">
-      <div><label>Target date</label><input type="date" id="mfm-targetdate" value="${f?escapeHtml(f.targetDate):''}"></div>
-      <div><label>Status</label><select id="mfm-status">
-        <option value="open" ${f?.status==='open'?'selected':''}>Open</option>
-        <option value="inprogress" ${f?.status==='inprogress'?'selected':''}>In progress</option>
-        <option value="closed" ${f?.status==='closed'?'selected':''}>Closed</option></select></div>
-    </div>
+    <div class="grid3"><div><label>AP &mdash; คำนวณอัตโนมัติ</label><div style="height:36px; display:flex; align-items:center;"><span class="badge badge-slate" id="mfm-ap-display">กรอก S, O, D ให้ครบก่อน</span></div></div></div>
     <div class="row-between" style="margin-top:8px; margin-bottom:0;">
       <a class="back-link" onclick="closeModal()">ยกเลิก</a>
       <button class="btn btn-primary" onclick="saveFmeaModal('${pid||''}','${fmId||''}')">${isEdit?'บันทึกการแก้ไข':'สร้าง Failure Mode'}</button>
@@ -631,12 +592,9 @@ function openFmeaModal(pid, fmId) {
   `);
   updateApPreview();
 }
-function onFmeaModalProcessChange() {
-  document.getElementById('mfm-fmno').value = nextFmNoFor(document.getElementById('mfm-process').value);
-}
 function saveFmeaModal(pid, fmId) {
   const failureMode = document.getElementById('mfm-failuremode').value.trim();
-  if (!failureMode) { alert('กรอก Potential Failure Mode ก่อนนะครับ'); return; }
+  if (!failureMode) { alert('กรอก Failure Mode ก่อนนะครับ'); return; }
   const targetPid = fmId ? pid : document.getElementById('mfm-process').value;
   if (!targetPid) { alert('เลือก Process ก่อนนะครับ'); return; }
   promptUserName(false);
@@ -644,19 +602,16 @@ function saveFmeaModal(pid, fmId) {
   const occurrence = document.getElementById('mfm-occurrence').value.trim();
   const detection = document.getElementById('mfm-detection').value.trim();
   const fm = {
-    fmNo: document.getElementById('mfm-fmno').value.trim(),
-    failureMode, effect: document.getElementById('mfm-effect').value.trim(),
+    subProcess: document.getElementById('mfm-subprocess').value.trim(),
+    effect: document.getElementById('mfm-effect').value.trim(),
     severity,
+    failureMode,
     cause: document.getElementById('mfm-cause').value.trim(),
-    occurrence,
     prevention: document.getElementById('mfm-prevention').value.trim(),
+    occurrence,
     detectionControl: document.getElementById('mfm-detectioncontrol').value.trim(),
     detection,
-    ap: calcAP(severity, occurrence, detection),
-    recommendedAction: document.getElementById('mfm-recommendedaction').value.trim(),
-    responsible: document.getElementById('mfm-responsible').value.trim(),
-    targetDate: document.getElementById('mfm-targetdate').value,
-    status: document.getElementById('mfm-status').value
+    ap: calcAP(severity, occurrence, detection)
   };
   if (fmId) {
     const old = allProcesses[pid].fmea[fmId];
@@ -685,16 +640,14 @@ function renderFmeaTable() {
   if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Failure Mode &mdash; กด "+ สร้าง Failure Mode ใหม่"</p>'; return; }
   const apCls = apBadgeCls;
   el.innerHTML = `<table class="data-table"><tr>
-    <th style="width:9%;">Process</th><th style="width:4%;">No.</th><th style="width:11%;">Failure Mode</th><th style="width:11%;">Effect</th>
-    <th style="width:3%;">S</th><th style="width:11%;">Cause</th><th style="width:3%;">O</th>
-    <th style="width:11%;">Prevention</th><th style="width:11%;">Detection Control</th><th style="width:3%;">D</th><th style="width:4%;">AP</th>
-    <th style="width:9%;">บันทึก</th><th style="width:10%;"></th>
+    <th style="width:9%;">Process</th><th style="width:8%;">Sub-Process</th><th style="width:11%;">Failure Effect</th><th style="width:3%;">S</th>
+    <th style="width:11%;">Failure Mode</th><th style="width:11%;">Failure Cause</th><th style="width:11%;">Prevention Control</th><th style="width:3%;">O</th>
+    <th style="width:11%;">Current Detection</th><th style="width:3%;">D</th><th style="width:4%;">AP</th>
+    <th style="width:8%;">บันทึก</th><th style="width:7%;"></th>
   </tr>${rows.map(r => `<tr>
-    <td>${escapeHtml(processLabel(r.pid))}</td>
-    <td>${escapeHtml(r.fmNo)}</td>
-    <td>${nl2br(r.failureMode)}</td><td>${nl2br(r.effect)}</td>
-    <td>${escapeHtml(r.severity)}</td><td>${nl2br(r.cause)}</td><td>${escapeHtml(r.occurrence)}</td>
-    <td>${nl2br(r.prevention)}</td><td>${nl2br(r.detectionControl)}</td><td>${escapeHtml(r.detection)}</td>
+    <td>${escapeHtml(processLabel(r.pid))}</td><td>${nl2br(r.subProcess)}</td><td>${nl2br(r.effect)}</td><td>${escapeHtml(r.severity)}</td>
+    <td>${nl2br(r.failureMode)}</td><td>${nl2br(r.cause)}</td><td>${nl2br(r.prevention)}</td><td>${escapeHtml(r.occurrence)}</td>
+    <td>${nl2br(r.detectionControl)}</td><td>${escapeHtml(r.detection)}</td>
     <td><span class="badge ${apCls(r.ap)}">${escapeHtml(r.ap)}</span></td>
     <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
     <td class="actions-cell">
@@ -705,7 +658,7 @@ function renderFmeaTable() {
   </tr>`).join('')}</table>`;
 }
 
-// ---------- FMEA export ----------
+// ---------- FMEA export (matches FMEA_Form.xlsx exactly, including original headers) ----------
 function toggleFmeaExportPicker() {
   const el = document.getElementById('fmea-export-picker');
   el.classList.toggle('hidden');
@@ -724,24 +677,24 @@ function exportFmeaExcel() {
   if (!checked.length) { alert('ติ๊กเลือก Process อย่างน้อย 1 รายการก่อนนะครับ'); return; }
   checked.sort((a,b) => parseFloat(allProcesses[a].processNo) - parseFloat(allProcesses[b].processNo));
   const partNo = document.getElementById('fep-partno').value.trim() || 'FMEA_export';
-  const headers = ['Process No.','Process Name','No.','Potential Failure Mode','Potential Effect(s)','S','Potential Cause(s)','O','Current Prevention Control','Current Detection Control','D','AP','Recommended Action','Responsible','Target Date','Status'];
+  const headers = ['Process','Sub-Process','Failure Effect :FE','Severarity:S','Failure Mode:FM ','Failure Cuase:FC','Prevention Control','Occurance:O','Current Detection','Detection:D','AP'];
   const wsData = [headers];
   const bodyMerges = []; let r = 1;
   checked.forEach(pid => {
     const p = allProcesses[pid];
-    const fms = Object.values(p.fmea || {}).sort((a,b) => (parseFloat(a.fmNo)||0) - (parseFloat(b.fmNo)||0));
+    const fms = Object.values(p.fmea || {}).sort((a,b) => activityTime(a) - activityTime(b));
     const startRow = r;
     fms.forEach((f,i) => {
-      wsData.push([i===0?p.processNo:'', i===0?p.processName:'', f.fmNo, f.failureMode, f.effect, f.severity, f.cause, f.occurrence, f.prevention, f.detectionControl, f.detection, f.ap, f.recommendedAction, f.responsible, f.targetDate, f.status]);
+      wsData.push([i===0?p.processName:'', f.subProcess, f.effect, f.severity, f.failureMode, f.cause, f.prevention, f.occurrence, f.detectionControl, f.detection, f.ap]);
       r += 1;
     });
-    if (r - startRow > 1) { [0,1].forEach(col => bodyMerges.push({s:{r:startRow,c:col},e:{r:r-1,c:col}})); }
+    if (r - startRow > 1) { bodyMerges.push({s:{r:startRow,c:0},e:{r:r-1,c:0}}); }
   });
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!merges'] = bodyMerges;
-  ws['!cols'] = [{wch:10},{wch:18},{wch:6},{wch:20},{wch:18},{wch:5},{wch:18},{wch:5},{wch:18},{wch:18},{wch:5},{wch:6},{wch:20},{wch:14},{wch:12},{wch:10}];
+  ws['!cols'] = [{wch:16},{wch:16},{wch:22},{wch:8},{wch:22},{wch:20},{wch:20},{wch:8},{wch:20},{wch:8},{wch:6}];
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'FMEA');
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
   XLSX.writeFile(wb, 'FMEA_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
 }
 
@@ -1087,7 +1040,6 @@ window.openHistoryModal = openHistoryModal;
 window.deleteLogEntry = deleteLogEntry;
 window.openFmeaModal = openFmeaModal;
 window.updateApPreview = updateApPreview;
-window.onFmeaModalProcessChange = onFmeaModalProcessChange;
 window.saveFmeaModal = saveFmeaModal;
 window.deleteFailureMode = deleteFailureMode;
 window.toggleFmeaExportPicker = toggleFmeaExportPicker;
