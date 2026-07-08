@@ -1127,17 +1127,26 @@ function renderCpTable() {
   const rows = flattenChars();
   const el = document.getElementById('cp-table-wrap');
   if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Characteristic &mdash; กด "+ สร้าง Characteristic ใหม่"</p>'; return; }
-  el.innerHTML = `<table class="data-table cp-table"><tr>
+  // precompute how many consecutive rows share each pid (rows are already sorted by process, so same-pid rows are adjacent)
+  const spanCount = new Array(rows.length).fill(0);
+  for (let i = 0; i < rows.length; i++) {
+    if (i > 0 && rows[i].pid === rows[i - 1].pid) { spanCount[i] = 0; continue; }
+    let count = 1;
+    while (i + count < rows.length && rows[i + count].pid === rows[i].pid) count++;
+    spanCount[i] = count;
+  }
+  el.innerHTML = `<table class="data-table"><tr>
     <th style="width:7%;">Process</th><th style="width:3%;">No.</th><th style="width:13%;">Product char.</th><th style="width:11%;">Process char.</th>
     <th style="width:8%;">Spec/Tolerance</th><th style="width:6%;">Document</th><th style="width:7%;">Evaluation</th><th style="width:5%;">จำนวน</th>
     <th style="width:5%;">ความถี่</th><th style="width:7%;">บันทึกคุณภาพ</th><th style="width:5%;">Owner</th><th style="width:7%;">Reaction</th>
     <th style="width:6%;">บันทึก</th><th style="width:10%;"></th>
-  </tr>${rows.map(r => `<tr>
-    <td>${escapeHtml(processLabel(r.pid))}</td><td>${escapeHtml(r.charNo)}</td><td>${nl2br(r.productChar)}</td><td>${nl2br(r.processChar)}</td>
-    <td>${nl2br(r.spec)}</td><td>${nl2br(r.document)}</td><td>${nl2br(r.evaluation)}</td><td>${escapeHtml(r.sampleSize)}</td>
-    <td>${escapeHtml(r.frequency)}</td><td>${nl2br(r.qualityRecord)}</td><td>${escapeHtml(r.owner)}</td><td>${nl2br(r.reaction)}</td>
-    <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
-    <td class="actions-cell">
+  </tr>${rows.map((r,i) => `<tr>
+    ${spanCount[i] ? `<td rowspan="${spanCount[i]}" style="background:var(--navy-soft);">${escapeHtml(processLabel(r.pid))}</td>` : ''}
+    <td class="tint-a">${escapeHtml(r.charNo)}</td><td class="tint-b">${nl2br(r.productChar)}</td><td class="tint-a">${nl2br(r.processChar)}</td>
+    <td class="tint-b">${nl2br(r.spec)}</td><td class="tint-a">${nl2br(r.document)}</td><td class="tint-b">${nl2br(r.evaluation)}</td><td class="tint-a">${escapeHtml(r.sampleSize)}</td>
+    <td class="tint-b">${escapeHtml(r.frequency)}</td><td class="tint-a">${nl2br(r.qualityRecord)}</td><td class="tint-b">${escapeHtml(r.owner)}</td><td class="tint-a">${nl2br(r.reaction)}</td>
+    <td class="tint-b" style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
+    <td class="actions-cell tint-a">
       <button class="btn btn-icon" onclick="openHistoryModal('processes/${r.pid}/controlPlan/chars/${r.cid}','${escapeHtml(r.charNo)} \u00b7 ${escapeHtml(r.productChar||r.processChar||'')}')" title="ประวัติ">&#128337;</button>
       <button class="btn btn-icon" onclick="openCharModal('${r.pid}','${r.cid}')" title="แก้ไข">&#9998;</button>
       <button class="btn btn-icon btn-danger" onclick="deleteChar('${r.pid}','${r.cid}')" title="ลบ">&times;</button>
