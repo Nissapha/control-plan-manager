@@ -84,7 +84,7 @@ input[type=text], input[type=number], input[type=date], select{
 .badge-coral{background:var(--coral-soft); color:#B8412E;}
 
 .process-card{padding:14px 14px 14px 6px; margin-bottom:12px; display:flex; gap:8px; align-items:stretch;}
-.drag-handle{cursor:grab; color:var(--ink-faint); display:flex; align-items:center; justify-content:center; padding:0 6px; touch-action:none; user-select:none; font-size:16px; letter-spacing:2px; flex-shrink:0;}
+.drag-handle{cursor:grab; color:var(--ink-faint); display:flex; align-items:center; justify-content:center; padding:0 6px; touch-action:none; user-select:none; font-size:18px; flex-shrink:0;}
 .drag-handle:active{cursor:grabbing; color:var(--navy);}
 .process-card-body{flex:1; min-width:0;}
 .sortable-ghost{opacity:0.35;}
@@ -425,7 +425,7 @@ function renderProcessList() {
       expandHtml = `<div class="expand-area"><h4>FMEA</h4>${fmTable}<h4>Control Plan</h4>${chTable}</div>`;
     }
     return `<div class="panel process-card" data-pid="${id}">
-      <div class="drag-handle" title="ลากเพื่อจัดลำดับ">&#8942;&#8942;</div>
+      <div class="drag-handle" title="ลากเพื่อจัดลำดับ">&#8597;</div>
       <div class="process-card-body">
       <div class="process-card-top">
         <div>
