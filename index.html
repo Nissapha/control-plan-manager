@@ -169,6 +169,9 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
       </div>
       <button class="btn btn-primary" onclick="openProcessModal()">+ สร้าง Process ใหม่</button>
     </div>
+    <div style="text-align:right; margin-bottom:12px;">
+      <button class="btn btn-ghost btn-sm" onclick="renumberProcessesFromCurrentOrder()">จัดเรียงเลขใหม่ (1, 2, 3...)</button>
+    </div>
     <div id="process-list"><p class="empty-state">ยังไม่มี Process &mdash; กด "+ สร้าง Process ใหม่"</p></div>
   </div>
 
@@ -438,6 +441,15 @@ function renderProcessList() {
   initProcessSortable();
 }
 let processSortableInstance = null;
+function renumberProcesses(orderedIds) {
+  const updates = {};
+  orderedIds.forEach((pid, i) => { updates['processes/' + pid + '/processNo'] = String(i + 1); });
+  update(ref(db), updates);
+}
+function renumberProcessesFromCurrentOrder() {
+  if (!confirm('จัดเรียง Process No. ใหม่ทั้งหมดตามลำดับปัจจุบัน (1, 2, 3...) หรือไม่?')) return;
+  renumberProcesses(sortedProcessIds());
+}
 function initProcessSortable() {
   const el = document.getElementById('process-list');
   if (processSortableInstance) { processSortableInstance.destroy(); processSortableInstance = null; }
@@ -447,9 +459,7 @@ function initProcessSortable() {
     animation: 150,
     onEnd: () => {
       const orderedIds = Array.from(el.querySelectorAll('.process-card')).map(card => card.dataset.pid);
-      const updates = {};
-      orderedIds.forEach((pid, i) => { updates['processes/' + pid + '/processNo'] = String(i + 1); });
-      update(ref(db), updates);
+      renumberProcesses(orderedIds);
     }
   });
 }
@@ -975,6 +985,7 @@ window.promptUserName = promptUserName;
 window.switchTab = switchTab;
 window.closeModal = closeModal;
 window.openProcessModal = openProcessModal;
+window.renumberProcessesFromCurrentOrder = renumberProcessesFromCurrentOrder;
 window.toggleModalNext = toggleModalNext;
 window.addModalTool = addModalTool;
 window.removeModalTool = removeModalTool;
