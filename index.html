@@ -106,13 +106,20 @@ input[type=text], input[type=number], input[type=date], select{
 
 table.data-table{width:100%; max-width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed;}
 table.data-table th, table.data-table td{border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; word-break:break-word; overflow-wrap:break-word; line-height:1.4;}
-table.data-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600; position:sticky; top:0;}
+table.data-table th{background:#EEF3F7; color:var(--ink-soft); font-weight:600; position:sticky; top:0;}
 table.data-table td{max-width:0; overflow:hidden;}
 table.data-table td.actions-cell{max-width:none; overflow:visible; white-space:nowrap; text-align:right;}
 table.data-table .btn-icon{padding:2px 5px; font-size:12px;}
 table.mini-table{width:100%; max-width:100%; border-collapse:collapse; font-size:11px; margin-bottom:4px; table-layout:fixed;}
 table.mini-table th, table.mini-table td{border:1px solid var(--line); padding:5px 7px; text-align:left; word-break:break-word; overflow-wrap:break-word; line-height:1.35;}
-table.mini-table th{background:#FAFCFD; color:var(--ink-soft); font-weight:600;}
+table.mini-table th{background:#EEF3F7; color:var(--ink-soft); font-weight:600;}
+.sp-bar{background:var(--navy); color:#fff; padding:8px 12px; border-radius:8px; font-weight:700; font-size:12.5px; margin:12px 0 6px;}
+.sp-bar:first-child{margin-top:0;}
+.fe-bar{background:var(--navy-soft); color:var(--navy); padding:6px 10px; border-radius:6px; font-weight:600; font-size:11.5px; margin:8px 0 4px;}
+.tint-a{background:#FAFCFD;}
+.tint-b{background:#FFFFFF;}
+.cp-table td:nth-child(odd){background:#FAFCFD;}
+.cp-table td:nth-child(even){background:#FFFFFF;}
 table.mini-table td{max-width:0; overflow:hidden;}
 table.mini-table td.no-cell{max-width:none; overflow:visible;}
 table.mini-table a.no-link{color:var(--navy); font-weight:600; cursor:pointer; text-decoration:underline;}
@@ -407,10 +414,10 @@ function renderProcessList() {
       spEntries.forEach(([spId, sp]) => {
         const feEntries = Object.entries(sp.effects || {}).sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0));
         if (!feEntries.length) return;
-        fmTable += `<p style="font-size:12px; font-weight:700; color:var(--navy); margin:10px 0 4px;">Sub-Process: ${nl2br(sp.name)}</p>`;
+        fmTable += `<div class="sp-bar">Sub-Process: ${nl2br(sp.name)}</div>`;
         feEntries.forEach(([feId, fe]) => {
           const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
-          fmTable += `<p style="font-size:11.5px; color:var(--ink-soft); margin:6px 0 2px;">FE${escapeHtml(fe.feNo)}: ${nl2br(fe.effect)} (S=${escapeHtml(fe.severity)})</p>`;
+          fmTable += `<div class="fe-bar">FE${escapeHtml(fe.feNo)}: ${nl2br(fe.effect)} (S=${escapeHtml(fe.severity)})</div>`;
           if (!modeEntries.length) {
             fmTable += '<p style="font-size:12px; color:var(--ink-faint); margin:0 0 4px;">ยังไม่มี Failure Mode</p>';
           } else {
@@ -420,9 +427,9 @@ function renderProcessList() {
             </tr>${modeEntries.map(([modeId,m]) => {
               const ap = calcAP(fe.severity, m.occurrence, m.detection);
               return `<tr>
-                <td class="no-cell"><a class="no-link" onclick="openModeModal('${id}','${spId}','${feId}','${modeId}')">${nl2br(m.failureMode)}</a></td>
-                <td>${nl2br(m.cause)}</td><td>${nl2br(m.prevention)}</td><td>${escapeHtml(m.occurrence)}</td>
-                <td>${nl2br(m.detectionControl)}</td><td>${escapeHtml(m.detection)}</td><td>${escapeHtml(ap)}</td>
+                <td class="no-cell tint-a"><a class="no-link" onclick="openModeModal('${id}','${spId}','${feId}','${modeId}')">${nl2br(m.failureMode)}</a></td>
+                <td class="tint-b">${nl2br(m.cause)}</td><td class="tint-a">${nl2br(m.prevention)}</td><td class="tint-b">${escapeHtml(m.occurrence)}</td>
+                <td class="tint-a">${nl2br(m.detectionControl)}</td><td class="tint-b">${escapeHtml(m.detection)}</td><td class="tint-a">${escapeHtml(ap)}</td>
               </tr>`;
             }).join('')}</table>`;
           }
@@ -430,7 +437,7 @@ function renderProcessList() {
       });
       if (!fmTable) fmTable = '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Effect</p>';
       const charEntriesList = Object.entries(p.controlPlan?.chars || {}).sort((a,b) => (parseFloat(a[1].charNo)||0) - (parseFloat(b[1].charNo)||0));
-      const chTable = charEntriesList.length ? `<table class="mini-table"><tr>
+      const chTable = charEntriesList.length ? `<table class="mini-table cp-table"><tr>
         <th style="width:4%;">No.</th><th style="width:14%;">Product char.</th><th style="width:13%;">Process char.</th><th style="width:11%;">Spec</th>
         <th style="width:9%;">Document</th><th style="width:10%;">Evaluation</th><th style="width:6%;">จำนวน</th><th style="width:6%;">ความถี่</th>
         <th style="width:9%;">บันทึกคุณภาพ</th><th style="width:8%;">Owner</th><th style="width:10%;">Reaction</th>
@@ -875,7 +882,7 @@ function renderFmeaTable() {
       let spCellDone = false;
       feInfo.forEach(({ feId, fe, modeEntries, feRowSpan }) => {
         const processCell = !processCellDone ? `<td rowspan="${processRowCount}">${escapeHtml(processLabel(pid))}</td>` : '';
-        const spCell = !spCellDone ? `<td rowspan="${spRowCount}">
+        const spCell = !spCellDone ? `<td rowspan="${spRowCount}" style="background:var(--navy); color:#fff;">
             <div>${nl2br(sp.name)}</div>
             <div style="margin-top:6px; display:flex; gap:2px;">
               <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}','${escapeHtml(sp.name)}')" title="ประวัติ">&#128337;</button>
@@ -885,8 +892,8 @@ function renderFmeaTable() {
           </td>` : '';
         processCellDone = true; spCellDone = true;
         const feCell = `
-          <td rowspan="${feRowSpan}">${escapeHtml(fe.feNo)}</td>
-          <td rowspan="${feRowSpan}">
+          <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">${escapeHtml(fe.feNo)}</td>
+          <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">
             <a class="no-link" onclick="openFeModal('${pid}','${spId}','${feId}')">${nl2br(fe.effect)}</a>
             <div style="margin-top:6px; display:flex; gap:2px;">
               <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}','FE${escapeHtml(fe.feNo)} ${escapeHtml(fe.effect)}')" title="ประวัติ Effect">&#128337;</button>
@@ -894,18 +901,18 @@ function renderFmeaTable() {
               <button class="btn btn-icon btn-danger" onclick="deleteFailureEffect('${pid}','${spId}','${feId}')" title="ลบ Effect">&times;</button>
             </div>
           </td>
-          <td rowspan="${feRowSpan}">${escapeHtml(fe.severity)}</td>`;
+          <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">${escapeHtml(fe.severity)}</td>`;
         if (!modeEntries.length) {
           bodyHtml += `<tr>${processCell}${spCell}${feCell}<td colspan="${HEADER_COUNT - 5}" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Mode</td></tr>`;
         } else {
           modeEntries.forEach(([modeId, m], i) => {
             const ap = calcAP(fe.severity, m.occurrence, m.detection);
             bodyHtml += `<tr>${i===0?processCell:''}${i===0?spCell:''}${i===0?feCell:''}
-              <td>${nl2br(m.failureMode)}</td><td>${nl2br(m.cause)}</td><td>${nl2br(m.prevention)}</td><td>${escapeHtml(m.occurrence)}</td>
-              <td>${nl2br(m.detectionControl)}</td><td>${escapeHtml(m.detection)}</td>
-              <td><span class="badge ${apBadgeCls(ap)}">${escapeHtml(ap)}</span></td>
-              <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(m)}</td>
-              <td class="actions-cell">
+              <td class="tint-a">${nl2br(m.failureMode)}</td><td class="tint-b">${nl2br(m.cause)}</td><td class="tint-a">${nl2br(m.prevention)}</td><td class="tint-b">${escapeHtml(m.occurrence)}</td>
+              <td class="tint-a">${nl2br(m.detectionControl)}</td><td class="tint-b">${escapeHtml(m.detection)}</td>
+              <td class="tint-a"><span class="badge ${apBadgeCls(ap)}">${escapeHtml(ap)}</span></td>
+              <td class="tint-b" style="font-size:11px; color:var(--ink-faint);">${whoWhen(m)}</td>
+              <td class="actions-cell tint-a">
                 <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}/modes/${modeId}','${escapeHtml(m.failureMode)}')" title="ประวัติ">&#128337;</button>
                 <button class="btn btn-icon" onclick="openModeModal('${pid}','${spId}','${feId}','${modeId}')" title="แก้ไข">&#9998;</button>
                 <button class="btn btn-icon btn-danger" onclick="deleteFmMode('${pid}','${spId}','${feId}','${modeId}')" title="ลบ">&times;</button>
@@ -1120,7 +1127,7 @@ function renderCpTable() {
   const rows = flattenChars();
   const el = document.getElementById('cp-table-wrap');
   if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Characteristic &mdash; กด "+ สร้าง Characteristic ใหม่"</p>'; return; }
-  el.innerHTML = `<table class="data-table"><tr>
+  el.innerHTML = `<table class="data-table cp-table"><tr>
     <th style="width:7%;">Process</th><th style="width:3%;">No.</th><th style="width:13%;">Product char.</th><th style="width:11%;">Process char.</th>
     <th style="width:8%;">Spec/Tolerance</th><th style="width:6%;">Document</th><th style="width:7%;">Evaluation</th><th style="width:5%;">จำนวน</th>
     <th style="width:5%;">ความถี่</th><th style="width:7%;">บันทึกคุณภาพ</th><th style="width:5%;">Owner</th><th style="width:7%;">Reaction</th>
