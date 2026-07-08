@@ -402,30 +402,33 @@ function renderProcessList() {
     const expanded = !!expandedProcesses[id];
     let expandHtml = '';
     if (expanded) {
-      const feEntries = Object.entries(p.fmea || {}).sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0));
-      let fmBody = '';
-      feEntries.forEach(([feId, fe]) => {
-        const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
-        const rs = Math.max(modeEntries.length, 1);
-        const feCells = `<td rowspan="${rs}">${escapeHtml(fe.feNo)}</td><td rowspan="${rs}">${nl2br(fe.subProcess)}</td><td rowspan="${rs}">${nl2br(fe.effect)}</td><td rowspan="${rs}">${escapeHtml(fe.severity)}</td>`;
-        if (!modeEntries.length) {
-          fmBody += `<tr>${feCells}<td colspan="7" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Mode</td></tr>`;
-        } else {
-          modeEntries.forEach(([modeId, m], i) => {
-            const ap = calcAP(fe.severity, m.occurrence, m.detection);
-            fmBody += `<tr>${i===0?feCells:''}
-              <td class="no-cell"><a class="no-link" onclick="openModeModal('${id}','${feId}','${modeId}')">${nl2br(m.failureMode)}</a></td>
-              <td>${nl2br(m.cause)}</td><td>${nl2br(m.prevention)}</td><td>${escapeHtml(m.occurrence)}</td>
-              <td>${nl2br(m.detectionControl)}</td><td>${escapeHtml(m.detection)}</td><td>${escapeHtml(ap)}</td>
-            </tr>`;
-          });
-        }
+      const spEntries = Object.entries(p.fmeaSubProcesses || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
+      let fmTable = '';
+      spEntries.forEach(([spId, sp]) => {
+        const feEntries = Object.entries(sp.effects || {}).sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0));
+        if (!feEntries.length) return;
+        fmTable += `<p style="font-size:12px; font-weight:700; color:var(--navy); margin:10px 0 4px;">Sub-Process: ${nl2br(sp.name)}</p>`;
+        feEntries.forEach(([feId, fe]) => {
+          const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
+          fmTable += `<p style="font-size:11.5px; color:var(--ink-soft); margin:6px 0 2px;">FE${escapeHtml(fe.feNo)}: ${nl2br(fe.effect)} (S=${escapeHtml(fe.severity)})</p>`;
+          if (!modeEntries.length) {
+            fmTable += '<p style="font-size:12px; color:var(--ink-faint); margin:0 0 4px;">ยังไม่มี Failure Mode</p>';
+          } else {
+            fmTable += `<table class="mini-table"><tr>
+              <th style="width:16%;">Failure Mode</th><th style="width:16%;">Failure Cause</th><th style="width:16%;">Prevention Control</th><th style="width:4%;">O</th>
+              <th style="width:16%;">Current Detection</th><th style="width:4%;">D</th><th style="width:6%;">AP</th>
+            </tr>${modeEntries.map(([modeId,m]) => {
+              const ap = calcAP(fe.severity, m.occurrence, m.detection);
+              return `<tr>
+                <td class="no-cell"><a class="no-link" onclick="openModeModal('${id}','${spId}','${feId}','${modeId}')">${nl2br(m.failureMode)}</a></td>
+                <td>${nl2br(m.cause)}</td><td>${nl2br(m.prevention)}</td><td>${escapeHtml(m.occurrence)}</td>
+                <td>${nl2br(m.detectionControl)}</td><td>${escapeHtml(m.detection)}</td><td>${escapeHtml(ap)}</td>
+              </tr>`;
+            }).join('')}</table>`;
+          }
+        });
       });
-      const fmTable = feEntries.length ? `<table class="mini-table"><tr>
-        <th style="width:3%;">FE No.</th><th style="width:9%;">Sub-Process</th><th style="width:13%;">Failure Effect</th><th style="width:3%;">S</th>
-        <th style="width:13%;">Failure Mode</th><th style="width:13%;">Failure Cause</th><th style="width:13%;">Prevention Control</th><th style="width:3%;">O</th>
-        <th style="width:13%;">Current Detection</th><th style="width:3%;">D</th><th style="width:4%;">AP</th>
-      </tr>${fmBody}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Effect</p>';
+      if (!fmTable) fmTable = '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Failure Effect</p>';
       const charEntriesList = Object.entries(p.controlPlan?.chars || {}).sort((a,b) => (parseFloat(a[1].charNo)||0) - (parseFloat(b[1].charNo)||0));
       const chTable = charEntriesList.length ? `<table class="mini-table"><tr>
         <th style="width:4%;">No.</th><th style="width:14%;">Product char.</th><th style="width:13%;">Process char.</th><th style="width:11%;">Spec</th>
@@ -524,7 +527,7 @@ function getByPath(path) {
   return path.split('/').reduce((obj, key) => (obj ? obj[key] : undefined), allProcesses ? {processes: allProcesses} : {});
 }
 
-// ================= FMEA (global tab) — Failure Effect (parent) -> Failure Mode (child) =================
+// ================= FMEA (global tab) — Process -> Sub-Process -> Failure Effect -> Failure Mode =================
 // ---------- Action Priority (AP) — AIAG-VDA standard table, verified against source PDF (1000/1000 combinations, zero monotonicity violations) ----------
 const AP_TABLE = {
   S9_10: {
@@ -571,35 +574,99 @@ function calcAP(s, o, d) {
 function apBadgeCls(ap) { return ap === 'H' ? 'badge-coral' : (ap === 'M' ? 'badge-amber' : (ap === 'L' ? 'badge-teal' : 'badge-slate')); }
 function apBadgeLabel(ap) { return ap === 'H' ? 'H (สูง)' : (ap === 'M' ? 'M (กลาง)' : (ap === 'L' ? 'L (ต่ำ)' : 'กรอก S, O, D ให้ครบก่อน')); }
 
-const FE_LABELS = { subProcess:'Sub-Process', effect:'Failure Effect (FE)', severity:'Severity (S)' };
+const SP_LABELS = { name: 'Sub-Process' };
+const FE_LABELS = { effect:'Failure Effect (FE)', severity:'Severity (S)' };
 const MODE_LABELS = { failureMode:'Failure Mode (FM)', cause:'Failure Cause (FC)', prevention:'Prevention Control', occurrence:'Occurrence (O)', detectionControl:'Current Detection', detection:'Detection (D)' };
 
-function nextFeNoFor(pid) {
-  const fes = allProcesses[pid]?.fmea || {};
-  const nums = Object.values(fes).map(f => parseFloat(f.feNo) || 0);
+function nextFeNoFor(pid, spId) {
+  const effects = allProcesses[pid]?.fmeaSubProcesses?.[spId]?.effects || {};
+  const nums = Object.values(effects).map(f => parseFloat(f.feNo) || 0);
   return (nums.length ? Math.max(...nums) : 0) + 1;
 }
 function fmeaModeCount(p) {
-  return Object.values(p.fmea || {}).reduce((sum, fe) => sum + Object.keys(fe.modes || {}).length, 0);
+  let count = 0;
+  Object.values(p.fmeaSubProcesses || {}).forEach(sp => {
+    Object.values(sp.effects || {}).forEach(fe => { count += Object.keys(fe.modes || {}).length; });
+  });
+  return count;
+}
+
+// ---------- Sub-Process CRUD (simple name-only entity, prevents free-text duplication) ----------
+function openSpModal(pid, spId) {
+  const sp = spId ? allProcesses[pid].fmeaSubProcesses[spId] : null;
+  const isEdit = !!sp;
+  showModal(`
+    <h2>${isEdit ? 'แก้ไข Sub-Process' : 'สร้าง Sub-Process ใหม่'}</h2>
+    <p style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">Process: <b>${escapeHtml(processLabel(pid))}</b></p>
+    <div style="margin-bottom:12px;"><label>ชื่อ Sub-Process</label><input type="text" id="msp-name" value="${sp?escapeHtml(sp.name):''}" placeholder="เช่น สถานีที่ 3 - เชื่อมตะเข็บ"></div>
+    <div class="row-between" style="margin-top:8px; margin-bottom:0;">
+      <a class="back-link" onclick="closeModal()">ยกเลิก</a>
+      <button class="btn btn-primary" onclick="saveSpModal('${pid}','${spId||''}')">${isEdit?'บันทึกการแก้ไข':'สร้าง Sub-Process'}</button>
+    </div>
+  `);
+}
+function saveSpModal(pid, spId) {
+  const name = document.getElementById('msp-name').value.trim();
+  if (!name) { alert('กรอกชื่อ Sub-Process ก่อนนะครับ'); return; }
+  promptUserName(false);
+  if (spId) {
+    const old = allProcesses[pid].fmeaSubProcesses[spId];
+    const changes = diffFields(old, {name}, SP_LABELS);
+    update(ref(db, 'processes/' + pid + '/fmeaSubProcesses/' + spId), { name, updatedBy: userName||'ไม่ระบุชื่อ', updatedAt: Date.now() }).then(() => {
+      if (changes.length) pushLog('processes/' + pid + '/fmeaSubProcesses/' + spId + '/log', { action:'edited', by:userName||'ไม่ระบุชื่อ', at:Date.now(), changes });
+      closeModal();
+    });
+  } else {
+    const newRef = push(ref(db, 'processes/' + pid + '/fmeaSubProcesses'));
+    set(newRef, { name, enteredBy: userName||'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(() => {
+      pushLog('processes/' + pid + '/fmeaSubProcesses/' + newRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
+      closeModal();
+    });
+  }
+}
+function deleteSubProcess(pid, spId) {
+  if (!confirm('ลบ Sub-Process นี้ พร้อม Failure Effect และ Failure Mode ทั้งหมดที่อยู่ในนั้นเลยหรือไม่?')) return;
+  remove(ref(db, 'processes/' + pid + '/fmeaSubProcesses/' + spId));
 }
 
 // ---------- Create / Edit Failure Effect (+ initial Modes when creating) ----------
 let modalFeModes = [];
+function processOptionsForFmea(selectedPid) { return processOptionsHtml(selectedPid); }
+function subProcessOptionsHtml(pid, selectedSpId) {
+  const sps = allProcesses[pid]?.fmeaSubProcesses || {};
+  const ids = Object.keys(sps).sort((a,b) => activityTime(sps[a]) - activityTime(sps[b]));
+  if (!ids.length) return '<option value="">-- ยังไม่มี ให้พิมพ์ใหม่ด้านล่าง --</option>';
+  return '<option value="">-- เลือก Sub-Process --</option>' + ids.map(id => `<option value="${id}" ${id===selectedSpId?'selected':''}>${escapeHtml(sps[id].name)}</option>`).join('');
+}
+function onFeModalProcessChange() {
+  const pid = document.getElementById('mfe-process').value;
+  const el = document.getElementById('mfe-subprocess-select');
+  if (el) el.innerHTML = subProcessOptionsHtml(pid, null);
+}
 function blankMode() { return { key: uid(), failureMode:'', cause:'', prevention:'', occurrence:'', detectionControl:'', detection:'' }; }
-function openFeModal(pid, feId) {
-  const fe = (pid && feId) ? allProcesses[pid].fmea[feId] : null;
+function openFeModal(pid, spId, feId) {
+  const sp = (pid && spId) ? allProcesses[pid].fmeaSubProcesses[spId] : null;
+  const fe = (sp && feId) ? sp.effects[feId] : null;
   const isEdit = !!fe;
   if (!isEdit) modalFeModes = [blankMode()];
+  const showProcessSelect = !pid;
+  const showSpPicker = !isEdit && !spId;
   showModal(`
     <h2>${isEdit ? 'แก้ไข Failure Effect' : 'สร้าง Failure Effect ใหม่'}</h2>
-    ${isEdit ? `<p style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">Process: <b>${escapeHtml(processLabel(pid))}</b></p>`
-              : `<div style="margin-bottom:12px;"><label>เลือก Process</label><select id="mfe-process">${processOptionsHtml(pid)}</select></div>`}
-    <div class="grid3" style="margin-bottom:12px;"><div><label>Failure Effect No.</label><input type="text" id="mfe-feno" value="${fe?escapeHtml(fe.feNo):nextFeNoFor(pid||sortedProcessIds()[0])}" style="width:100px;"></div></div>
-    <div class="grid2">
-      <div><label>Sub-Process</label><input type="text" id="mfe-subprocess" value="${fe?escapeHtml(fe.subProcess):''}" placeholder="เช่น สถานีที่ 3 - เชื่อมตะเข็บ"></div>
-      <div><label>Severity (S) 1-10</label><input type="number" id="mfe-severity" min="1" max="10" value="${fe?escapeHtml(fe.severity):''}" oninput="refreshAllModalModeAp()"></div>
-    </div>
-    <div style="margin-bottom:${isEdit?'0':'12px'};"><label>Failure Effect (FE)</label><textarea id="mfe-effect">${fe?escapeHtml(fe.effect):''}</textarea></div>
+    ${showProcessSelect
+      ? `<div style="margin-bottom:12px;"><label>เลือก Process</label><select id="mfe-process" onchange="onFeModalProcessChange()">${processOptionsForFmea(pid)}</select></div>`
+      : `<p style="font-size:13px; color:var(--ink-soft); margin:0 0 8px;">Process: <b>${escapeHtml(processLabel(pid))}</b></p>`}
+    ${showSpPicker
+      ? `<div class="grid2" style="margin-bottom:12px;">
+          <div><label>เลือก Sub-Process ที่มีอยู่</label><select id="mfe-subprocess-select">${subProcessOptionsHtml(pid || sortedProcessIds()[0], null)}</select></div>
+          <div><label>หรือพิมพ์ Sub-Process ใหม่</label><input type="text" id="mfe-newsubprocess" placeholder="เช่น สถานีที่ 3 - เชื่อมตะเข็บ"></div>
+        </div>`
+      : `<p style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">Sub-Process: <b>${escapeHtml(sp?sp.name:'')}</b></p>`}
+    ${isEdit
+      ? `<p style="font-size:12px; color:var(--ink-faint); margin:0 0 12px;">FE No.: <b>${escapeHtml(fe.feNo)}</b> (กำหนดอัตโนมัติ แก้ไขไม่ได้ เพื่อป้องกันเลขซ้ำ)</p>`
+      : `<p style="font-size:12px; color:var(--ink-faint); margin:0 0 12px;">FE No. จะกำหนดให้อัตโนมัติตอนบันทึก (ป้องกันเลขซ้ำ)</p>`}
+    <div style="margin-bottom:12px;"><label>Failure Effect (FE)</label><textarea id="mfe-effect">${fe?escapeHtml(fe.effect):''}</textarea></div>
+    <div class="grid3" style="margin-bottom:${isEdit?'0':'12px'};"><div><label>Severity (S) 1-10</label><input type="number" id="mfe-severity" min="1" max="10" value="${fe?escapeHtml(fe.severity):''}" oninput="refreshAllModalModeAp()"></div></div>
     ${isEdit ? '' : `
     <h3>Failure Mode ที่เกิดจาก Effect นี้ได้ (เพิ่มได้หลายอัน)</h3>
     <div id="mfe-mode-cards"></div>
@@ -607,7 +674,7 @@ function openFeModal(pid, feId) {
     `}
     <div class="row-between" style="margin-top:16px; margin-bottom:0;">
       <a class="back-link" onclick="closeModal()">ยกเลิก</a>
-      <button class="btn btn-primary" onclick="saveFeModal('${pid||''}','${feId||''}')">${isEdit?'บันทึกการแก้ไข':'สร้าง Failure Effect'}</button>
+      <button class="btn btn-primary" onclick="saveFeModal('${pid||''}','${spId||''}','${feId||''}')">${isEdit?'บันทึกการแก้ไข':'สร้าง Failure Effect'}</button>
     </div>
   `);
   if (!isEdit) renderModalModeCards();
@@ -649,54 +716,69 @@ function refreshAllModalModeAp() {
     if (el) { const ap = calcAP(sev, m.occurrence, m.detection); el.className = 'badge ' + apBadgeCls(ap); el.textContent = ap || 'กรอก O, D'; }
   });
 }
-function saveFeModal(pid, feId) {
+function saveFeModal(pid, spId, feId) {
   const effect = document.getElementById('mfe-effect').value.trim();
   if (!effect) { alert('กรอก Failure Effect ก่อนนะครับ'); return; }
-  const targetPid = feId ? pid : document.getElementById('mfe-process').value;
+  const targetPid = pid || document.getElementById('mfe-process').value;
   if (!targetPid) { alert('เลือก Process ก่อนนะครับ'); return; }
   promptUserName(false);
-  const fe = {
-    feNo: document.getElementById('mfe-feno').value.trim(),
-    subProcess: document.getElementById('mfe-subprocess').value.trim(),
-    severity: document.getElementById('mfe-severity').value.trim(),
-    effect
-  };
+  const severity = document.getElementById('mfe-severity').value.trim();
+
   if (feId) {
-    const old = allProcesses[pid].fmea[feId];
-    const changes = diffFields(old, fe, FE_LABELS);
-    fe.updatedBy = userName || 'ไม่ระบุชื่อ'; fe.updatedAt = Date.now();
-    update(ref(db, 'processes/' + pid + '/fmea/' + feId), fe).then(() => {
-      if (changes.length) pushLog('processes/' + pid + '/fmea/' + feId + '/log', { action:'edited', by:userName||'ไม่ระบุชื่อ', at:Date.now(), changes });
+    const old = allProcesses[pid].fmeaSubProcesses[spId].effects[feId];
+    const updated = { effect, severity };
+    const changes = diffFields(old, updated, FE_LABELS);
+    updated.updatedBy = userName || 'ไม่ระบุชื่อ'; updated.updatedAt = Date.now();
+    update(ref(db, 'processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/' + feId), updated).then(() => {
+      if (changes.length) pushLog('processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/' + feId + '/log', { action:'edited', by:userName||'ไม่ระบุชื่อ', at:Date.now(), changes });
       closeModal();
     });
-  } else {
-    fe.enteredBy = userName || 'ไม่ระบุชื่อ'; fe.enteredAt = Date.now();
-    const newFeRef = push(ref(db, 'processes/' + targetPid + '/fmea'));
+    return;
+  }
+
+  function createEffectUnder(finalSpId) {
+    const feData = { feNo: String(nextFeNoFor(targetPid, finalSpId)), effect, severity, enteredBy: userName||'ไม่ระบุชื่อ', enteredAt: Date.now() };
     const modesObj = {};
     modalFeModes.forEach(m => {
       if (!m.failureMode.trim()) return;
       modesObj[m.key] = {
         failureMode: m.failureMode.trim(), cause: m.cause.trim(), prevention: m.prevention.trim(),
-        occurrence: m.occurrence.trim ? m.occurrence.trim() : m.occurrence, detectionControl: m.detectionControl.trim(),
-        detection: m.detection.trim ? m.detection.trim() : m.detection,
+        occurrence: (m.occurrence || '').toString().trim(), detectionControl: m.detectionControl.trim(),
+        detection: (m.detection || '').toString().trim(),
         enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
       };
     });
-    fe.modes = modesObj;
-    set(newFeRef, fe).then(() => {
-      pushLog('processes/' + targetPid + '/fmea/' + newFeRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
+    feData.modes = modesObj;
+    const newFeRef = push(ref(db, 'processes/' + targetPid + '/fmeaSubProcesses/' + finalSpId + '/effects'));
+    set(newFeRef, feData).then(() => {
+      pushLog('processes/' + targetPid + '/fmeaSubProcesses/' + finalSpId + '/effects/' + newFeRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
       closeModal();
     });
   }
+
+  if (spId) { createEffectUnder(spId); return; }
+
+  const newSpName = document.getElementById('mfe-newsubprocess').value.trim();
+  if (newSpName) {
+    const newSpRef = push(ref(db, 'processes/' + targetPid + '/fmeaSubProcesses'));
+    set(newSpRef, { name: newSpName, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(() => {
+      pushLog('processes/' + targetPid + '/fmeaSubProcesses/' + newSpRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
+      createEffectUnder(newSpRef.key);
+    });
+  } else {
+    const selectedSpId = document.getElementById('mfe-subprocess-select').value;
+    if (!selectedSpId) { alert('เลือก หรือ พิมพ์ Sub-Process ก่อนนะครับ'); return; }
+    createEffectUnder(selectedSpId);
+  }
 }
-function deleteFailureEffect(pid, feId) {
+function deleteFailureEffect(pid, spId, feId) {
   if (!confirm('ลบ Failure Effect นี้ พร้อม Failure Mode ทั้งหมดที่อยู่ในนั้นเลยหรือไม่?')) return;
-  remove(ref(db, 'processes/' + pid + '/fmea/' + feId));
+  remove(ref(db, 'processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/' + feId));
 }
 
 // ---------- Add / Edit a single Failure Mode under an existing Effect ----------
-function openModeModal(pid, feId, modeId) {
-  const fe = allProcesses[pid].fmea[feId];
+function openModeModal(pid, spId, feId, modeId) {
+  const fe = allProcesses[pid].fmeaSubProcesses[spId].effects[feId];
   const m = modeId ? fe.modes[modeId] : null;
   const isEdit = !!m;
   showModal(`
@@ -717,7 +799,7 @@ function openModeModal(pid, feId, modeId) {
     <div class="grid3"><div><label>AP &mdash; คำนวณอัตโนมัติ</label><div style="height:36px; display:flex; align-items:center;"><span class="badge badge-slate" id="mmo-ap-display">กรอก O, D ให้ครบก่อน</span></div></div></div>
     <div class="row-between" style="margin-top:8px; margin-bottom:0;">
       <a class="back-link" onclick="closeModal()">ยกเลิก</a>
-      <button class="btn btn-primary" onclick="saveModeModal('${pid}','${feId}','${modeId||''}')">${isEdit?'บันทึกการแก้ไข':'เพิ่ม Failure Mode'}</button>
+      <button class="btn btn-primary" onclick="saveModeModal('${pid}','${spId}','${feId}','${modeId||''}')">${isEdit?'บันทึกการแก้ไข':'เพิ่ม Failure Mode'}</button>
     </div>
   `);
   updateModeModalAp(fe.severity);
@@ -729,7 +811,7 @@ function updateModeModalAp(severity) {
   const el = document.getElementById('mmo-ap-display');
   if (el) { el.className = 'badge ' + apBadgeCls(ap); el.textContent = apBadgeLabel(ap); }
 }
-function saveModeModal(pid, feId, modeId) {
+function saveModeModal(pid, spId, feId, modeId) {
   const failureMode = document.getElementById('mmo-failuremode').value.trim();
   if (!failureMode) { alert('กรอก Failure Mode ก่อนนะครับ'); return; }
   promptUserName(false);
@@ -741,83 +823,107 @@ function saveModeModal(pid, feId, modeId) {
     detectionControl: document.getElementById('mmo-detectioncontrol').value.trim(),
     detection: document.getElementById('mmo-detection').value.trim()
   };
+  const base = 'processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/' + feId + '/modes/';
   if (modeId) {
-    const old = allProcesses[pid].fmea[feId].modes[modeId];
+    const old = allProcesses[pid].fmeaSubProcesses[spId].effects[feId].modes[modeId];
     const changes = diffFields(old, m, MODE_LABELS);
     m.updatedBy = userName || 'ไม่ระบุชื่อ'; m.updatedAt = Date.now();
-    update(ref(db, 'processes/' + pid + '/fmea/' + feId + '/modes/' + modeId), m).then(() => {
-      if (changes.length) pushLog('processes/' + pid + '/fmea/' + feId + '/modes/' + modeId + '/log', { action:'edited', by:userName||'ไม่ระบุชื่อ', at:Date.now(), changes });
+    update(ref(db, base + modeId), m).then(() => {
+      if (changes.length) pushLog(base + modeId + '/log', { action:'edited', by:userName||'ไม่ระบุชื่อ', at:Date.now(), changes });
       closeModal();
     });
   } else {
     m.enteredBy = userName || 'ไม่ระบุชื่อ'; m.enteredAt = Date.now();
-    const newRef = push(ref(db, 'processes/' + pid + '/fmea/' + feId + '/modes'));
+    const newRef = push(ref(db, base.slice(0, -1)));
     set(newRef, m).then(() => {
-      pushLog('processes/' + pid + '/fmea/' + feId + '/modes/' + newRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
+      pushLog(base + newRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
       closeModal();
     });
   }
 }
-function deleteFmMode(pid, feId, modeId) {
+function deleteFmMode(pid, spId, feId, modeId) {
   if (!confirm('ลบ Failure Mode นี้หรือไม่?')) return;
-  remove(ref(db, 'processes/' + pid + '/fmea/' + feId + '/modes/' + modeId));
+  remove(ref(db, 'processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/' + feId + '/modes/' + modeId));
 }
 
-// ---------- Master FMEA table (grouped by Failure Effect, one row per Failure Mode) ----------
+// ---------- Master FMEA table: Process > Sub-Process > Failure Effect > Failure Mode ----------
 function renderFmeaTable() {
   const ids = sortedProcessIds();
   const el = document.getElementById('fmea-table-wrap');
+  const HEADER_COUNT = 14;
   let bodyHtml = '';
-  let anyEffect = false;
+  let any = false;
   ids.forEach(pid => {
     const p = allProcesses[pid];
-    const feEntries = Object.entries(p.fmea || {}).sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0));
-    feEntries.forEach(([feId, fe]) => {
-      anyEffect = true;
-      const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
-      const rowSpan = Math.max(modeEntries.length, 1);
-      const effectCellsHtml = `
-        <td rowspan="${rowSpan}">${escapeHtml(processLabel(pid))}</td>
-        <td rowspan="${rowSpan}">${nl2br(fe.subProcess)}</td>
-        <td rowspan="${rowSpan}">${escapeHtml(fe.feNo)}</td>
-        <td rowspan="${rowSpan}">
-          <div>${nl2br(fe.effect)}</div>
-          <div style="margin-top:6px; display:flex; gap:2px;">
-            <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmea/${feId}','FE${escapeHtml(fe.feNo)} ${escapeHtml(fe.effect)}')" title="ประวัติ Effect">&#128337;</button>
-            <button class="btn btn-icon" onclick="openFeModal('${pid}','${feId}')" title="แก้ไข Effect">&#9998;</button>
-            <button class="btn btn-icon" onclick="openModeModal('${pid}','${feId}')" title="เพิ่ม Failure Mode">&#10133;</button>
-            <button class="btn btn-icon btn-danger" onclick="deleteFailureEffect('${pid}','${feId}')" title="ลบ Effect">&times;</button>
-          </div>
-        </td>
-        <td rowspan="${rowSpan}">${escapeHtml(fe.severity)}</td>`;
-      if (!modeEntries.length) {
-        bodyHtml += `<tr>${effectCellsHtml}<td colspan="9" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Mode</td></tr>`;
-        return;
-      }
-      modeEntries.forEach(([modeId, m], i) => {
-        const ap = calcAP(fe.severity, m.occurrence, m.detection);
-        bodyHtml += `<tr>${i===0 ? effectCellsHtml : ''}
-          <td>${nl2br(m.failureMode)}</td><td>${nl2br(m.cause)}</td><td>${nl2br(m.prevention)}</td><td>${escapeHtml(m.occurrence)}</td>
-          <td>${nl2br(m.detectionControl)}</td><td>${escapeHtml(m.detection)}</td>
-          <td><span class="badge ${apBadgeCls(ap)}">${escapeHtml(ap)}</span></td>
-          <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(m)}</td>
-          <td class="actions-cell">
-            <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmea/${feId}/modes/${modeId}','${escapeHtml(m.failureMode)}')" title="ประวัติ">&#128337;</button>
-            <button class="btn btn-icon" onclick="openModeModal('${pid}','${feId}','${modeId}')" title="แก้ไข">&#9998;</button>
-            <button class="btn btn-icon btn-danger" onclick="deleteFmMode('${pid}','${feId}','${modeId}')" title="ลบ">&times;</button>
+    const spEntries = Object.entries(p.fmeaSubProcesses || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
+    const spInfo = spEntries.map(([spId, sp]) => {
+      const feEntries = Object.entries(sp.effects || {}).sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0));
+      let spRowCount = 0;
+      const feInfo = feEntries.map(([feId, fe]) => {
+        const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
+        const feRowSpan = Math.max(modeEntries.length, 1);
+        spRowCount += feRowSpan;
+        return { feId, fe, modeEntries, feRowSpan };
+      });
+      return { spId, sp, feInfo, spRowCount };
+    }).filter(s => s.feInfo.length);
+    const processRowCount = spInfo.reduce((sum, s) => sum + s.spRowCount, 0);
+    if (!processRowCount) return;
+    any = true;
+    let processCellDone = false;
+    spInfo.forEach(({ spId, sp, feInfo, spRowCount }) => {
+      let spCellDone = false;
+      feInfo.forEach(({ feId, fe, modeEntries, feRowSpan }) => {
+        const processCell = !processCellDone ? `<td rowspan="${processRowCount}">${escapeHtml(processLabel(pid))}</td>` : '';
+        const spCell = !spCellDone ? `<td rowspan="${spRowCount}">
+            <div>${nl2br(sp.name)}</div>
+            <div style="margin-top:6px; display:flex; gap:2px;">
+              <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}','${escapeHtml(sp.name)}')" title="ประวัติ">&#128337;</button>
+              <button class="btn btn-icon" onclick="openFeModal('${pid}','${spId}')" title="เพิ่ม Failure Effect">&#10133;</button>
+              <button class="btn btn-icon btn-danger" onclick="deleteSubProcess('${pid}','${spId}')" title="ลบ Sub-Process">&times;</button>
+            </div>
+          </td>` : '';
+        processCellDone = true; spCellDone = true;
+        const feCell = `
+          <td rowspan="${feRowSpan}">${escapeHtml(fe.feNo)}</td>
+          <td rowspan="${feRowSpan}">
+            <a class="no-link" onclick="openFeModal('${pid}','${spId}','${feId}')">${nl2br(fe.effect)}</a>
+            <div style="margin-top:6px; display:flex; gap:2px;">
+              <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}','FE${escapeHtml(fe.feNo)} ${escapeHtml(fe.effect)}')" title="ประวัติ Effect">&#128337;</button>
+              <button class="btn btn-icon" onclick="openModeModal('${pid}','${spId}','${feId}')" title="เพิ่ม Failure Mode">&#10133;</button>
+              <button class="btn btn-icon btn-danger" onclick="deleteFailureEffect('${pid}','${spId}','${feId}')" title="ลบ Effect">&times;</button>
+            </div>
           </td>
-        </tr>`;
+          <td rowspan="${feRowSpan}">${escapeHtml(fe.severity)}</td>`;
+        if (!modeEntries.length) {
+          bodyHtml += `<tr>${processCell}${spCell}${feCell}<td colspan="${HEADER_COUNT - 5}" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Mode</td></tr>`;
+        } else {
+          modeEntries.forEach(([modeId, m], i) => {
+            const ap = calcAP(fe.severity, m.occurrence, m.detection);
+            bodyHtml += `<tr>${i===0?processCell:''}${i===0?spCell:''}${i===0?feCell:''}
+              <td>${nl2br(m.failureMode)}</td><td>${nl2br(m.cause)}</td><td>${nl2br(m.prevention)}</td><td>${escapeHtml(m.occurrence)}</td>
+              <td>${nl2br(m.detectionControl)}</td><td>${escapeHtml(m.detection)}</td>
+              <td><span class="badge ${apBadgeCls(ap)}">${escapeHtml(ap)}</span></td>
+              <td style="font-size:11px; color:var(--ink-faint);">${whoWhen(m)}</td>
+              <td class="actions-cell">
+                <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}/modes/${modeId}','${escapeHtml(m.failureMode)}')" title="ประวัติ">&#128337;</button>
+                <button class="btn btn-icon" onclick="openModeModal('${pid}','${spId}','${feId}','${modeId}')" title="แก้ไข">&#9998;</button>
+                <button class="btn btn-icon btn-danger" onclick="deleteFmMode('${pid}','${spId}','${feId}','${modeId}')" title="ลบ">&times;</button>
+              </td>
+            </tr>`;
+          });
+        }
       });
     });
   });
-  if (!anyEffect) { el.innerHTML = '<p class="empty-state">ยังไม่มี Failure Effect &mdash; กด "+ สร้าง Failure Effect ใหม่"</p>'; return; }
+  if (!any) { el.innerHTML = '<p class="empty-state">ยังไม่มี Failure Effect &mdash; กด "+ สร้าง Failure Effect ใหม่"</p>'; return; }
   el.innerHTML = `<table class="data-table"><tr>
-    <th style="width:8%;">Process</th><th style="width:7%;">Sub-Process</th><th style="width:3%;">FE No.</th><th style="width:14%;">Failure Effect</th><th style="width:3%;">S</th>
-    <th style="width:11%;">Failure Mode</th><th style="width:9%;">Failure Cause</th><th style="width:12%;">Prevention Control</th><th style="width:3%;">O</th><th style="width:9%;">Current Detection</th><th style="width:3%;">D</th><th style="width:4%;">AP</th><th style="width:6%;">บันทึก</th><th style="width:8%;"></th>
+    <th style="width:7%;">Process</th><th style="width:9%;">Sub-Process</th><th style="width:3%;">FE#</th><th style="width:13%;">Failure Effect</th><th style="width:3%;">S</th>
+    <th style="width:12%;">Failure Mode</th><th style="width:9%;">Failure Cause</th><th style="width:11%;">Prevention Control</th><th style="width:3%;">O</th><th style="width:9%;">Current Detection</th><th style="width:3%;">D</th><th style="width:4%;">AP</th><th style="width:6%;">บันทึก</th><th style="width:8%;"></th>
   </tr>${bodyHtml}</table>`;
 }
 
-// ---------- FMEA export (matches FMEA_Form.xlsx exactly, including original headers) ----------
+// ---------- FMEA export (matches FMEA_Form.xlsx headers exactly) ----------
 function toggleFmeaExportPicker() {
   const el = document.getElementById('fmea-export-picker');
   el.classList.toggle('hidden');
@@ -841,26 +947,32 @@ function exportFmeaExcel() {
   const bodyMerges = []; let r = 1;
   checked.forEach(pid => {
     const p = allProcesses[pid];
-    const feEntries = Object.entries(p.fmea || {}).sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0));
+    const spEntries = Object.entries(p.fmeaSubProcesses || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
     const processStartRow = r;
-    let processRowCount = 0;
-    feEntries.forEach(([feId, fe]) => {
-      const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
-      const feStartRow = r;
-      if (!modeEntries.length) {
-        wsData.push(['', fe.subProcess, fe.effect, fe.severity, '', '', '', '', '', '', '']);
-        r += 1; processRowCount += 1;
-      } else {
-        modeEntries.forEach(([modeId, m], i) => {
-          const ap = calcAP(fe.severity, m.occurrence, m.detection);
-          wsData.push(['', i===0?fe.subProcess:'', i===0?fe.effect:'', i===0?fe.severity:'', m.failureMode, m.cause, m.prevention, m.occurrence, m.detectionControl, m.detection, ap]);
-          r += 1; processRowCount += 1;
-        });
-      }
-      if (r - feStartRow > 1) { [1,2,3].forEach(col => bodyMerges.push({s:{r:feStartRow,c:col},e:{r:r-1,c:col}})); }
+    spEntries.forEach(([spId, sp]) => {
+      const feEntries = Object.entries(sp.effects || {}).sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0));
+      if (!feEntries.length) return;
+      const spStartRow = r;
+      feEntries.forEach(([feId, fe]) => {
+        const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
+        const feStartRow = r;
+        if (!modeEntries.length) {
+          wsData.push(['', '', fe.effect, fe.severity, '', '', '', '', '', '', '']);
+          r += 1;
+        } else {
+          modeEntries.forEach(([modeId, m], i) => {
+            const ap = calcAP(fe.severity, m.occurrence, m.detection);
+            wsData.push(['', '', i===0?fe.effect:'', i===0?fe.severity:'', m.failureMode, m.cause, m.prevention, m.occurrence, m.detectionControl, m.detection, ap]);
+            r += 1;
+          });
+        }
+        if (r - feStartRow > 1) { [2,3].forEach(col => bodyMerges.push({s:{r:feStartRow,c:col},e:{r:r-1,c:col}})); }
+      });
+      if (r - spStartRow > 1) { bodyMerges.push({s:{r:spStartRow,c:1},e:{r:r-1,c:1}}); }
+      wsData[spStartRow][1] = sp.name;
     });
-    if (processRowCount > 1) { bodyMerges.push({s:{r:processStartRow,c:0},e:{r:processStartRow+processRowCount-1,c:0}}); }
-    if (processRowCount >= 1) { wsData[processStartRow][0] = p.processName; }
+    if (r - processStartRow > 1) { bodyMerges.push({s:{r:processStartRow,c:0},e:{r:r-1,c:0}}); }
+    if (r > processStartRow) { wsData[processStartRow][0] = p.processName; }
   });
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!merges'] = bodyMerges;
@@ -1080,7 +1192,7 @@ const FLOW_CELL_W = 190, FLOW_CELL_H = 110, FLOW_BOX_W = 160, FLOW_BOX_H = 64, F
 
 function flowNodeClass(p) {
   const hasCp = Object.keys(p.controlPlan?.chars || {}).length > 0;
-  const hasFmea = Object.keys(p.fmea || {}).length > 0;
+  const hasFmea = fmeaModeCount(p) > 0;
   return hasCp ? 'fn-teal' : (hasFmea ? 'fn-amber' : 'fn-slate');
 }
 function flowLineSvg(x1, y1, x2, y2, withArrow) {
@@ -1211,6 +1323,10 @@ window.toggleExpand = toggleExpand;
 window.openHistoryModal = openHistoryModal;
 window.deleteLogEntry = deleteLogEntry;
 window.openFeModal = openFeModal;
+window.onFeModalProcessChange = onFeModalProcessChange;
+window.openSpModal = openSpModal;
+window.saveSpModal = saveSpModal;
+window.deleteSubProcess = deleteSubProcess;
 window.saveFeModal = saveFeModal;
 window.deleteFailureEffect = deleteFailureEffect;
 window.addModalModeCard = addModalModeCard;
