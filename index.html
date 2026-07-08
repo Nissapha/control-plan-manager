@@ -327,7 +327,7 @@ function openProcessModal(pid) {
   showModal(`
     <h2>${p ? 'แก้ไข Process' : 'สร้าง Process ใหม่'}</h2>
     <div class="grid3">
-      <div><label>Process No.</label><input type="text" id="mpo-processno" value="${p?escapeHtml(p.processNo):''}" placeholder="เช่น 10"></div>
+      <div><label>Process No.</label><input type="text" id="mpo-processno" value="${p?escapeHtml(p.processNo):''}" placeholder="เช่น 1"></div>
       <div style="grid-column:span 2;"><label>Process name</label><input type="text" id="mpo-processname" value="${p?escapeHtml(p.processName):''}" placeholder="เช่น ปั๊มโลหะ"></div>
     </div>
     <h3>M/C, JIG, Tool ที่ใช้</h3>
@@ -448,7 +448,7 @@ function initProcessSortable() {
     onEnd: () => {
       const orderedIds = Array.from(el.querySelectorAll('.process-card')).map(card => card.dataset.pid);
       const updates = {};
-      orderedIds.forEach((pid, i) => { updates['processes/' + pid + '/processNo'] = String((i + 1) * 10); });
+      orderedIds.forEach((pid, i) => { updates['processes/' + pid + '/processNo'] = String(i + 1); });
       update(ref(db), updates);
     }
   });
