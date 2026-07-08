@@ -83,7 +83,12 @@ input[type=text], input[type=number], input[type=date], select{
 .badge-teal{background:var(--teal-soft); color:#1D7468;}
 .badge-coral{background:var(--coral-soft); color:#B8412E;}
 
-.process-card{padding:16px 18px; margin-bottom:12px;}
+.process-card{padding:14px 14px 14px 6px; margin-bottom:12px; display:flex; gap:8px; align-items:stretch;}
+.drag-handle{cursor:grab; color:var(--ink-faint); display:flex; align-items:center; justify-content:center; padding:0 6px; touch-action:none; user-select:none; font-size:16px; letter-spacing:2px; flex-shrink:0;}
+.drag-handle:active{cursor:grabbing; color:var(--navy);}
+.process-card-body{flex:1; min-width:0;}
+.sortable-ghost{opacity:0.35;}
+.sortable-chosen .panel-inner-shadow{box-shadow:0 6px 20px rgba(14,39,56,0.18);}
 .process-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;}
 .process-name{font-size:15px; font-weight:700; color:var(--navy);}
 .process-tools{font-size:12px; color:var(--ink-faint); margin-top:2px;}
@@ -236,6 +241,7 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getDatabase, ref, push, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+import Sortable from "https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/modular/sortable.esm.js";
 
 mermaid.initialize({ startOnLoad: false, theme: 'base', flowchart: { curve: 'basis' } });
 
@@ -369,7 +375,10 @@ function toggleExpand(pid) { expandedProcesses[pid] = !expandedProcesses[pid]; r
 function renderProcessList() {
   const ids = sortedProcessIds();
   const el = document.getElementById('process-list');
-  if (!ids.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Process &mdash; กด "+ สร้าง Process ใหม่"</p>'; return; }
+  if (!ids.length) {
+    if (processSortableInstance) { processSortableInstance.destroy(); processSortableInstance = null; }
+    el.innerHTML = '<p class="empty-state">ยังไม่มี Process &mdash; กด "+ สร้าง Process ใหม่"</p>'; return;
+  }
   el.innerHTML = ids.map(id => {
     const p = allProcesses[id];
     const fmCount = Object.keys(p.fmea || {}).length;
@@ -402,7 +411,9 @@ function renderProcessList() {
       </tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Characteristic</p>';
       expandHtml = `<div class="expand-area"><h4>FMEA</h4>${fmTable}<h4>Control Plan</h4>${chTable}</div>`;
     }
-    return `<div class="panel process-card">
+    return `<div class="panel process-card" data-pid="${id}">
+      <div class="drag-handle" title="ลากเพื่อจัดลำดับ">&#8942;&#8942;</div>
+      <div class="process-card-body">
       <div class="process-card-top">
         <div>
           <div class="process-name">${escapeHtml(p.processNo)} &middot; ${escapeHtml(p.processName)}</div>
@@ -416,11 +427,31 @@ function renderProcessList() {
       </div>
       <div class="process-badges">
         <span class="badge ${fmCount ? 'badge-teal' : 'badge-slate'}">FMEA (${fmCount})</span>
+        <button class="btn btn-sm btn-ghost" onclick="openFmeaModal('${id}')">+ สร้าง FMEA</button>
         <span class="badge ${chCount ? 'badge-teal' : 'badge-slate'}">Control Plan (${chCount})</span>
+        <button class="btn btn-sm btn-ghost" onclick="openCharModal('${id}')">+ สร้าง Characteristic</button>
       </div>
       ${expandHtml}
+      </div>
     </div>`;
   }).join('');
+  initProcessSortable();
+}
+let processSortableInstance = null;
+function initProcessSortable() {
+  const el = document.getElementById('process-list');
+  if (processSortableInstance) { processSortableInstance.destroy(); processSortableInstance = null; }
+  if (!el || !el.querySelector('.process-card')) return;
+  processSortableInstance = Sortable.create(el, {
+    handle: '.drag-handle',
+    animation: 150,
+    onEnd: () => {
+      const orderedIds = Array.from(el.querySelectorAll('.process-card')).map(card => card.dataset.pid);
+      const updates = {};
+      orderedIds.forEach((pid, i) => { updates['processes/' + pid + '/processNo'] = String((i + 1) * 10); });
+      update(ref(db), updates);
+    }
+  });
 }
 
 // ================= HISTORY (shared, shown via modal) =================
