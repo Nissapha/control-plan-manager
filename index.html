@@ -409,7 +409,7 @@ function renderProcessList() {
         const rs = Math.max(modeEntries.length, 1);
         const feCells = `<td rowspan="${rs}">${escapeHtml(fe.feNo)}</td><td rowspan="${rs}">${nl2br(fe.subProcess)}</td><td rowspan="${rs}">${nl2br(fe.effect)}</td><td rowspan="${rs}">${escapeHtml(fe.severity)}</td>`;
         if (!modeEntries.length) {
-          fmBody += `<tr>${feCells}<td colspan="6" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Mode</td></tr>`;
+          fmBody += `<tr>${feCells}<td colspan="7" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Mode</td></tr>`;
         } else {
           modeEntries.forEach(([modeId, m], i) => {
             const ap = calcAP(fe.severity, m.occurrence, m.detection);
@@ -789,7 +789,7 @@ function renderFmeaTable() {
           <button class="btn btn-icon btn-danger" onclick="deleteFailureEffect('${pid}','${feId}')" title="ลบ Effect">&times;</button>
         </td>`;
       if (!modeEntries.length) {
-        bodyHtml += `<tr>${effectCellsHtml}<td colspan="7" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Mode</td></tr>`;
+        bodyHtml += `<tr>${effectCellsHtml}<td colspan="9" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Mode</td></tr>`;
         return;
       }
       modeEntries.forEach(([modeId, m], i) => {
