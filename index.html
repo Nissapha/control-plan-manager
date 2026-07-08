@@ -958,15 +958,49 @@ function flowNodeClass(p) {
   const hasFmea = Object.keys(p.fmea || {}).length > 0;
   return hasCp ? 'fn-teal' : (hasFmea ? 'fn-amber' : 'fn-slate');
 }
-function flowEdgePoints(a, b) {
-  const ax = a.col * FLOW_CELL_W + FLOW_MARGIN, ay = a.row * FLOW_CELL_H + FLOW_MARGIN;
-  const bx = b.col * FLOW_CELL_W + FLOW_MARGIN, by = b.row * FLOW_CELL_H + FLOW_MARGIN;
-  if (a.col === b.col) {
-    const x = ax + FLOW_BOX_W / 2;
-    return b.row >= a.row ? [x, ay + FLOW_BOX_H, x, by] : [x, ay, x, by + FLOW_BOX_H];
-  }
-  const y1 = ay + FLOW_BOX_H / 2, y2 = by + FLOW_BOX_H / 2;
-  return b.col > a.col ? [ax + FLOW_BOX_W, y1, bx, y2] : [ax, y1, bx + FLOW_BOX_W, y2];
+function flowLineSvg(x1, y1, x2, y2, withArrow) {
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#94A2AF" stroke-width="1.5"${withArrow ? ' marker-end="url(#flow-arrow)"' : ''}/>`;
+}
+function buildFlowEdgesHtml(ids) {
+  const edges = [];
+  ids.forEach(id => {
+    Object.keys(allProcesses[id].nextProcessIds || {}).forEach(targetId => {
+      if (allProcesses[targetId]) edges.push({ sourceId: id, targetId });
+    });
+  });
+  const groups = {};
+  let html = '';
+  edges.forEach(edge => {
+    const a = allProcesses[edge.sourceId].flowPos, b = allProcesses[edge.targetId].flowPos;
+    if (a.col === b.col) {
+      // Same column: simple direct vertical line, no bus needed
+      const x = a.col * FLOW_CELL_W + FLOW_MARGIN + FLOW_BOX_W / 2;
+      const ay = a.row * FLOW_CELL_H + FLOW_MARGIN, by = b.row * FLOW_CELL_H + FLOW_MARGIN;
+      const [y1, y2] = b.row >= a.row ? [ay + FLOW_BOX_H, by] : [ay, by + FLOW_BOX_H];
+      html += flowLineSvg(x, y1, x, y2, true);
+      return;
+    }
+    (groups[a.col + '_' + b.col] = groups[a.col + '_' + b.col] || []).push(edge);
+  });
+  // For each source-column -> target-column pair, route all edges through one shared trunk (fishbone/bus style)
+  Object.values(groups).forEach(group => {
+    const a0 = allProcesses[group[0].sourceId].flowPos, b0 = allProcesses[group[0].targetId].flowPos;
+    const forward = b0.col > a0.col;
+    const srcEdgeX = forward ? (a0.col * FLOW_CELL_W + FLOW_MARGIN + FLOW_BOX_W) : (a0.col * FLOW_CELL_W + FLOW_MARGIN);
+    const tgtEdgeX = forward ? (b0.col * FLOW_CELL_W + FLOW_MARGIN) : (b0.col * FLOW_CELL_W + FLOW_MARGIN + FLOW_BOX_W);
+    const trunkX = (srcEdgeX + tgtEdgeX) / 2;
+    let minY = Infinity, maxY = -Infinity;
+    group.forEach(edge => {
+      const a = allProcesses[edge.sourceId].flowPos, b = allProcesses[edge.targetId].flowPos;
+      const srcY = a.row * FLOW_CELL_H + FLOW_MARGIN + FLOW_BOX_H / 2;
+      const tgtY = b.row * FLOW_CELL_H + FLOW_MARGIN + FLOW_BOX_H / 2;
+      html += flowLineSvg(srcEdgeX, srcY, trunkX, srcY, false);
+      html += flowLineSvg(trunkX, tgtY, tgtEdgeX, tgtY, true);
+      minY = Math.min(minY, srcY, tgtY); maxY = Math.max(maxY, srcY, tgtY);
+    });
+    if (minY !== maxY) html += flowLineSvg(trunkX, minY, trunkX, maxY, false);
+  });
+  return html;
 }
 async function renderFlowTab() {
   const ids = sortedProcessIds();
@@ -982,14 +1016,7 @@ async function renderFlowTab() {
   const canvasW = (maxCol + 1) * FLOW_CELL_W + FLOW_MARGIN * 2;
   const canvasH = (maxRow + 1) * FLOW_CELL_H + FLOW_MARGIN * 2;
 
-  let edgesHtml = '';
-  ids.forEach(id => {
-    Object.keys(allProcesses[id].nextProcessIds || {}).forEach(targetId => {
-      if (!allProcesses[targetId]) return;
-      const [x1, y1, x2, y2] = flowEdgePoints(allProcesses[id].flowPos, allProcesses[targetId].flowPos);
-      edgesHtml += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#94A2AF" stroke-width="1.5" marker-end="url(#flow-arrow)"/>`;
-    });
-  });
+  const edgesHtml = buildFlowEdgesHtml(ids);
   const boxesHtml = ids.map(id => {
     const p = allProcesses[id];
     const x = p.flowPos.col * FLOW_CELL_W + FLOW_MARGIN, y = p.flowPos.row * FLOW_CELL_H + FLOW_MARGIN;
