@@ -169,7 +169,7 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
 
   <!-- ===== TAB: FMEA ===== -->
   <div id="tab-fmea" class="hidden">
-    <div class="note">ช่อง AP (Action Priority) ให้เลือกเองก่อน (H/M/L) รอตาราง AIAG-VDA ที่ยืนยันแล้วมาเชื่อมคำนวณอัตโนมัติทีหลัง</div>
+    <div class="note" style="color:#1D7468; background:var(--teal-soft);">Action Priority (AP) คำนวณอัตโนมัติจากตาราง AIAG-VDA ที่ยืนยันแล้ว &mdash; กรอก Severity, Occurrence, Detection ให้ครบ ระบบจะขึ้น AP ให้ทันที</div>
     <div class="panel">
       <div class="row-between" style="margin-bottom:0;">
         <h2 style="margin:0;">Export FMEA สำหรับสินค้า</h2>
@@ -456,6 +456,60 @@ function getByPath(path) {
 }
 
 // ================= FMEA (global tab) =================
+// ---------- Action Priority (AP) — AIAG-VDA table, verified against source PDF ----------
+const AP_TABLE = {
+  S9_10: {
+    O8_10: {D7_10:'H', D5_6:'H', D2_4:'H', D1:'H'},
+    O6_7:  {D7_10:'H', D5_6:'H', D2_4:'H', D1:'H'},
+    O4_5:  {D7_10:'H', D5_6:'H', D2_4:'H', D1:'M'},
+    O2_3:  {D7_10:'H', D5_6:'H', D2_4:'H', D1:'L'},
+    O1: 'L'
+  },
+  S7_8: {
+    O8_10: {D7_10:'H', D5_6:'H', D2_4:'H', D1:'H'},
+    O6_7:  {D7_10:'H', D5_6:'H', D2_4:'H', D1:'M'},
+    O4_5:  {D7_10:'H', D5_6:'M', D2_4:'M', D1:'M'},
+    O2_3:  {D7_10:'M', D5_6:'M', D2_4:'L', D1:'L'},
+    O1: 'L'
+  },
+  S4_6: {
+    O8_10: {D7_10:'H', D5_6:'H', D2_4:'M', D1:'M'},
+    O6_7:  {D7_10:'M', D5_6:'M', D2_4:'M', D1:'L'},
+    O4_5:  {D7_10:'M', D5_6:'L', D2_4:'L', D1:'L'},
+    O2_3:  {D7_10:'L', D5_6:'L', D2_4:'L', D1:'L'},
+    O1: 'L'
+  },
+  S2_3: {
+    O8_10: {D7_10:'M', D5_6:'M', D2_4:'L', D1:'L'},
+    O6_7:  {D7_10:'L', D5_6:'L', D2_4:'L', D1:'L'},
+    O4_5:  {D7_10:'L', D5_6:'L', D2_4:'L', D1:'L'},
+    O2_3:  {D7_10:'L', D5_6:'L', D2_4:'L', D1:'L'},
+    O1: 'L'
+  },
+  S1: 'L'
+};
+function sBand(s) { s = parseFloat(s)||0; if (s>=9) return 'S9_10'; if (s>=7) return 'S7_8'; if (s>=4) return 'S4_6'; if (s>=2) return 'S2_3'; return 'S1'; }
+function oBand(o) { o = parseFloat(o)||0; if (o>=8) return 'O8_10'; if (o>=6) return 'O6_7'; if (o>=4) return 'O4_5'; if (o>=2) return 'O2_3'; return 'O1'; }
+function dBand(d) { d = parseFloat(d)||0; if (d>=7) return 'D7_10'; if (d>=5) return 'D5_6'; if (d>=2) return 'D2_4'; return 'D1'; }
+function calcAP(s, o, d) {
+  if (!s || !o || !d) return '';
+  const sb = sBand(s);
+  if (sb === 'S1') return 'L';
+  const entry = AP_TABLE[sb][oBand(o)];
+  if (oBand(o) === 'O1') return entry;
+  return entry[dBand(d)];
+}
+function apBadgeCls(ap) { return ap === 'H' ? 'badge-coral' : (ap === 'M' ? 'badge-amber' : (ap === 'L' ? 'badge-teal' : 'badge-slate')); }
+function apBadgeLabel(ap) { return ap === 'H' ? 'H (สูง)' : (ap === 'M' ? 'M (กลาง)' : (ap === 'L' ? 'L (ต่ำ)' : 'กรอก S, O, D ให้ครบก่อน')); }
+function updateApPreview() {
+  const s = document.getElementById('mfm-severity').value;
+  const o = document.getElementById('mfm-occurrence').value;
+  const d = document.getElementById('mfm-detection').value;
+  const ap = calcAP(s, o, d);
+  const el = document.getElementById('mfm-ap-display');
+  if (el) { el.className = 'badge ' + apBadgeCls(ap); el.textContent = apBadgeLabel(ap); el.dataset.ap = ap; }
+}
+
 const FM_LABELS = {
   fmNo:'Failure Mode No.', failureMode:'Potential Failure Mode', effect:'Potential Effect(s)', severity:'Severity (S)',
   cause:'Potential Cause(s)', occurrence:'Occurrence (O)', prevention:'Current Prevention Control',
@@ -492,11 +546,11 @@ function openFmeaModal(pid, fmId) {
       <div><label>Potential Failure Mode</label><textarea id="mfm-failuremode">${f?escapeHtml(f.failureMode):''}</textarea></div>
       <div><label>Potential Effect(s)</label><textarea id="mfm-effect">${f?escapeHtml(f.effect):''}</textarea></div>
     </div>
-    <div class="grid3"><div><label>Severity (S) 1-10</label><input type="number" id="mfm-severity" min="1" max="10" value="${f?escapeHtml(f.severity):''}"></div></div>
+    <div class="grid3"><div><label>Severity (S) 1-10</label><input type="number" id="mfm-severity" min="1" max="10" value="${f?escapeHtml(f.severity):''}" oninput="updateApPreview()"></div></div>
     <h3>สาเหตุ</h3>
     <div class="grid2">
       <div><label>Potential Cause(s)</label><textarea id="mfm-cause">${f?escapeHtml(f.cause):''}</textarea></div>
-      <div><label>Occurrence (O) 1-10</label><input type="number" id="mfm-occurrence" min="1" max="10" value="${f?escapeHtml(f.occurrence):''}"></div>
+      <div><label>Occurrence (O) 1-10</label><input type="number" id="mfm-occurrence" min="1" max="10" value="${f?escapeHtml(f.occurrence):''}" oninput="updateApPreview()"></div>
     </div>
     <h3>การควบคุมปัจจุบัน</h3>
     <div class="grid2">
@@ -504,11 +558,8 @@ function openFmeaModal(pid, fmId) {
       <div><label>Current Detection Control</label><textarea id="mfm-detectioncontrol">${f?escapeHtml(f.detectionControl):''}</textarea></div>
     </div>
     <div class="grid3">
-      <div><label>Detection (D) 1-10</label><input type="number" id="mfm-detection" min="1" max="10" value="${f?escapeHtml(f.detection):''}"></div>
-      <div><label>Action Priority (AP)</label><select id="mfm-ap">
-        <option value="H" ${f?.ap==='H'?'selected':''}>H (สูง)</option>
-        <option value="M" ${f?.ap==='M'?'selected':''}>M (กลาง)</option>
-        <option value="L" ${f?.ap==='L'?'selected':''}>L (ต่ำ)</option></select></div>
+      <div><label>Detection (D) 1-10</label><input type="number" id="mfm-detection" min="1" max="10" value="${f?escapeHtml(f.detection):''}" oninput="updateApPreview()"></div>
+      <div><label>Action Priority (AP) &mdash; คำนวณอัตโนมัติ</label><div style="height:36px; display:flex; align-items:center;"><span class="badge badge-slate" id="mfm-ap-display">กรอก S, O, D ให้ครบก่อน</span></div></div>
     </div>
     <h3>มาตรการและติดตาม</h3>
     <div class="grid2">
@@ -527,6 +578,7 @@ function openFmeaModal(pid, fmId) {
       <button class="btn btn-primary" onclick="saveFmeaModal('${pid||''}','${fmId||''}')">${isEdit?'บันทึกการแก้ไข':'สร้าง Failure Mode'}</button>
     </div>
   `);
+  updateApPreview();
 }
 function onFmeaModalProcessChange() {
   document.getElementById('mfm-fmno').value = nextFmNoFor(document.getElementById('mfm-process').value);
@@ -537,16 +589,19 @@ function saveFmeaModal(pid, fmId) {
   const targetPid = fmId ? pid : document.getElementById('mfm-process').value;
   if (!targetPid) { alert('เลือก Process ก่อนนะครับ'); return; }
   promptUserName(false);
+  const severity = document.getElementById('mfm-severity').value.trim();
+  const occurrence = document.getElementById('mfm-occurrence').value.trim();
+  const detection = document.getElementById('mfm-detection').value.trim();
   const fm = {
     fmNo: document.getElementById('mfm-fmno').value.trim(),
     failureMode, effect: document.getElementById('mfm-effect').value.trim(),
-    severity: document.getElementById('mfm-severity').value.trim(),
+    severity,
     cause: document.getElementById('mfm-cause').value.trim(),
-    occurrence: document.getElementById('mfm-occurrence').value.trim(),
+    occurrence,
     prevention: document.getElementById('mfm-prevention').value.trim(),
     detectionControl: document.getElementById('mfm-detectioncontrol').value.trim(),
-    detection: document.getElementById('mfm-detection').value.trim(),
-    ap: document.getElementById('mfm-ap').value,
+    detection,
+    ap: calcAP(severity, occurrence, detection),
     recommendedAction: document.getElementById('mfm-recommendedaction').value.trim(),
     responsible: document.getElementById('mfm-responsible').value.trim(),
     targetDate: document.getElementById('mfm-targetdate').value,
@@ -577,7 +632,7 @@ function renderFmeaTable() {
   const rows = flattenFmea();
   const el = document.getElementById('fmea-table-wrap');
   if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Failure Mode &mdash; กด "+ สร้าง Failure Mode ใหม่"</p>'; return; }
-  const apCls = ap => ap === 'H' ? 'badge-coral' : (ap === 'M' ? 'badge-amber' : 'badge-slate');
+  const apCls = apBadgeCls;
   el.innerHTML = `<table class="data-table"><tr>
     <th style="width:9%;">Process</th><th style="width:4%;">No.</th><th style="width:11%;">Failure Mode</th><th style="width:11%;">Effect</th>
     <th style="width:3%;">S</th><th style="width:11%;">Cause</th><th style="width:3%;">O</th>
@@ -899,6 +954,7 @@ window.toggleExpand = toggleExpand;
 window.openHistoryModal = openHistoryModal;
 window.deleteLogEntry = deleteLogEntry;
 window.openFmeaModal = openFmeaModal;
+window.updateApPreview = updateApPreview;
 window.onFmeaModalProcessChange = onFmeaModalProcessChange;
 window.saveFmeaModal = saveFmeaModal;
 window.deleteFailureMode = deleteFailureMode;
