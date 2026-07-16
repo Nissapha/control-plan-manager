@@ -133,18 +133,6 @@ textarea{width:100%; min-height:56px; padding:8px 10px; border:1px solid var(--l
 .empty-state{ text-align:center; padding:40px 24px; color:var(--ink-soft); border:1.5px dashed var(--line); border-radius:var(--radius); }
 a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:none; font-weight:600;}
 .note{font-size:12px; color:#A85F22; background:var(--amber-soft); border-radius:8px; padding:8px 12px; margin:0 0 12px;}
-#flow-diagram-wrap{overflow:auto;}
-.flow-canvas{position:relative;}
-.flow-svg-layer{position:absolute; top:0; left:0; pointer-events:none;}
-.flow-node{
-  position:absolute; border-radius:8px; border:1.5px solid; padding:6px 10px; font-size:12.5px; font-weight:600;
-  display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.3;
-  cursor:grab; touch-action:none; user-select:none; box-shadow:0 1px 3px rgba(14,39,56,0.08); transition:box-shadow .1s;
-}
-.flow-node.dragging{cursor:grabbing; z-index:50; box-shadow:0 10px 28px rgba(14,39,56,0.28); transition:none;}
-.flow-node.fn-teal{background:var(--teal-soft); border-color:var(--teal); color:#1D7468;}
-.flow-node.fn-amber{background:var(--amber-soft); border-color:var(--amber); color:#A85F22;}
-.flow-node.fn-slate{background:var(--slate-soft); border-color:var(--slate); color:#5C6B79;}
 .export-picker-row{display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--line-soft);}
 .export-picker-row:last-child{border-bottom:none;}
 
@@ -174,7 +162,6 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
         <button class="tab-btn active" id="tab-btn-overview" onclick="switchTab('overview')">Process Overview</button>
         <button class="tab-btn" id="tab-btn-fmea" onclick="switchTab('fmea')">FMEA</button>
         <button class="tab-btn" id="tab-btn-cp" onclick="switchTab('cp')">Control Plan</button>
-        <button class="tab-btn" id="tab-btn-flow" onclick="switchTab('flow')">Process Flow</button>
       </div>
     </div>
   </div>
@@ -244,17 +231,6 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
     <div class="table-scroll" id="cp-table-wrap"><p class="empty-state">ยังไม่มี Characteristic</p></div>
   </div>
 
-  <!-- ===== TAB: PROCESS FLOW ===== -->
-  <div id="tab-flow" class="hidden">
-    <div class="row-between" style="margin-bottom:0;">
-      <div>
-        <div style="font-size:17px; font-weight:700; color:var(--navy);">Process Flow</div>
-        <div class="page-desc" style="margin:2px 0 0;">ลากกล่องเพื่อจัดตำแหน่งได้อิสระ (Snap เข้าตารางเสมอ) &mdash; เส้นเชื่อมยังอิงจากที่กำหนดไว้ตอนแก้ไข Process &mdash; เขียว-ฟ้า = มี Control Plan แล้ว, ส้ม = มี FMEA แต่ยังไม่มี Control Plan, เทา = ยังไม่มีอะไรเลย</div>
-      </div>
-    </div>
-    <div class="panel" id="flow-diagram-wrap"><p class="empty-state">ยังไม่มี Process หรือยังไม่ได้เชื่อมความสัมพันธ์ &mdash; ไปที่ Process Overview แล้วกดแก้ไข Process เพื่อกำหนดว่า "ต่อไปยัง Process ไหน"</p></div>
-  </div>
-
 </div>
 
 <!-- ===== MODAL ===== -->
@@ -307,7 +283,6 @@ onValue(ref(db, 'processes'), snap => {
   renderProcessList();
   renderFmeaTable();
   renderCpTable();
-  if (currentTab === 'flow') renderFlowTab();
 });
 
 function sortedProcessIds() {
@@ -319,11 +294,10 @@ function processLabel(pid) { const p = allProcesses[pid]; return p ? (p.processN
 
 function switchTab(tab) {
   currentTab = tab;
-  ['overview','fmea','cp','flow'].forEach(t => {
+  ['overview','fmea','cp'].forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
     document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
   });
-  if (tab === 'flow') renderFlowTab();
 }
 
 // ---------- Generic modal ----------
@@ -335,18 +309,10 @@ function processOptionsHtml(selectedId) {
 
 // ================= PROCESS OVERVIEW =================
 let modalPoTools = [];
-let modalPoNext = {};
 function openProcessModal(pid) {
   const p = pid ? allProcesses[pid] : null;
   modalPoTools = p ? Object.entries(p.tools || {}).map(([k,v]) => ({key:k, value:v})) : [{key:uid(), value:''}];
   if (!modalPoTools.length) modalPoTools = [{key:uid(), value:''}];
-  modalPoNext = p ? {...(p.nextProcessIds || {})} : {};
-  const otherProcesses = sortedProcessIds().filter(id => id !== pid);
-  const nextChecklistHtml = otherProcesses.length ? otherProcesses.map(id => `
-    <label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-size:13px; font-weight:400; cursor:pointer;">
-      <input type="checkbox" data-nextid="${id}" ${modalPoNext[id] ? 'checked' : ''} onchange="toggleModalNext('${id}', this.checked)">
-      ${escapeHtml(processLabel(id))}
-    </label>`).join('') : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Process อื่นให้เลือก</p>';
   showModal(`
     <h2>${p ? 'แก้ไข Process' : 'สร้าง Process ใหม่'}</h2>
     <div class="grid3">
@@ -356,8 +322,6 @@ function openProcessModal(pid) {
     <h3>M/C, JIG, Tool ที่ใช้</h3>
     <div id="mpo-tool-rows"></div>
     <button class="btn btn-sm btn-ghost" onclick="addModalTool()">+ เพิ่มเครื่องมือ</button>
-    <h3>ต่อไปยัง Process ไหนบ้าง (เลือกได้หลายอัน)</h3>
-    <div id="mpo-next-list" style="max-height:200px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; padding:8px 12px;">${nextChecklistHtml}</div>
     <div class="row-between" style="margin-top:16px; margin-bottom:0;">
       <a class="back-link" onclick="closeModal()">ยกเลิก</a>
       <button class="btn btn-primary" onclick="saveProcessModal('${pid||''}')">${p?'บันทึกการแก้ไข':'สร้าง Process'}</button>
@@ -365,7 +329,6 @@ function openProcessModal(pid) {
   `);
   renderModalToolRows();
 }
-function toggleModalNext(id, checked) { if (checked) modalPoNext[id] = true; else delete modalPoNext[id]; }
 function renderModalToolRows() {
   document.getElementById('mpo-tool-rows').innerHTML = modalPoTools.map(t => `
     <div class="tool-row">
@@ -384,10 +347,10 @@ function saveProcessModal(pid) {
   const toolsObj = {};
   modalPoTools.forEach(t => { if (t.value.trim()) toolsObj[t.key] = t.value.trim(); });
   if (pid) {
-    update(ref(db, 'processes/' + pid), { processNo, processName, tools: toolsObj, nextProcessIds: modalPoNext }).then(closeModal);
+    update(ref(db, 'processes/' + pid), { processNo, processName, tools: toolsObj }).then(closeModal);
   } else {
     const newRef = push(ref(db, 'processes'));
-    set(newRef, { processNo, processName, tools: toolsObj, nextProcessIds: modalPoNext, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(closeModal);
+    set(newRef, { processNo, processName, tools: toolsObj, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(closeModal);
   }
 }
 function deleteProcess(pid) {
@@ -1205,133 +1168,12 @@ function exportCombined() {
   buildControlPlanSheet(checked, 'ControlPlan_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
 }
 
-// ================= PROCESS FLOW (draggable grid canvas) =================
-const FLOW_CELL_W = 190, FLOW_CELL_H = 110, FLOW_BOX_W = 160, FLOW_BOX_H = 64, FLOW_MARGIN = 20;
-
-function flowNodeClass(p) {
-  const hasCp = Object.keys(p.controlPlan?.chars || {}).length > 0;
-  const hasFmea = fmeaModeCount(p) > 0;
-  return hasCp ? 'fn-teal' : (hasFmea ? 'fn-amber' : 'fn-slate');
-}
-function flowLineSvg(x1, y1, x2, y2, withArrow) {
-  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#94A2AF" stroke-width="1.5"${withArrow ? ' marker-end="url(#flow-arrow)"' : ''}/>`;
-}
-function buildFlowEdgesHtml(ids) {
-  const edges = [];
-  ids.forEach(id => {
-    Object.keys(allProcesses[id].nextProcessIds || {}).forEach(targetId => {
-      if (allProcesses[targetId]) edges.push({ sourceId: id, targetId });
-    });
-  });
-  const groups = {};
-  let html = '';
-  edges.forEach(edge => {
-    const a = allProcesses[edge.sourceId].flowPos, b = allProcesses[edge.targetId].flowPos;
-    if (a.col === b.col) {
-      // Same column: simple direct vertical line, no bus needed
-      const x = a.col * FLOW_CELL_W + FLOW_MARGIN + FLOW_BOX_W / 2;
-      const ay = a.row * FLOW_CELL_H + FLOW_MARGIN, by = b.row * FLOW_CELL_H + FLOW_MARGIN;
-      const [y1, y2] = b.row >= a.row ? [ay + FLOW_BOX_H, by] : [ay, by + FLOW_BOX_H];
-      html += flowLineSvg(x, y1, x, y2, true);
-      return;
-    }
-    (groups[a.col + '_' + b.col] = groups[a.col + '_' + b.col] || []).push(edge);
-  });
-  // For each source-column -> target-column pair, route all edges through one shared trunk (fishbone/bus style)
-  Object.values(groups).forEach(group => {
-    const a0 = allProcesses[group[0].sourceId].flowPos, b0 = allProcesses[group[0].targetId].flowPos;
-    const forward = b0.col > a0.col;
-    const srcEdgeX = forward ? (a0.col * FLOW_CELL_W + FLOW_MARGIN + FLOW_BOX_W) : (a0.col * FLOW_CELL_W + FLOW_MARGIN);
-    const tgtEdgeX = forward ? (b0.col * FLOW_CELL_W + FLOW_MARGIN) : (b0.col * FLOW_CELL_W + FLOW_MARGIN + FLOW_BOX_W);
-    const trunkX = (srcEdgeX + tgtEdgeX) / 2;
-    let minY = Infinity, maxY = -Infinity;
-    group.forEach(edge => {
-      const a = allProcesses[edge.sourceId].flowPos, b = allProcesses[edge.targetId].flowPos;
-      const srcY = a.row * FLOW_CELL_H + FLOW_MARGIN + FLOW_BOX_H / 2;
-      const tgtY = b.row * FLOW_CELL_H + FLOW_MARGIN + FLOW_BOX_H / 2;
-      html += flowLineSvg(srcEdgeX, srcY, trunkX, srcY, false);
-      html += flowLineSvg(trunkX, tgtY, tgtEdgeX, tgtY, true);
-      minY = Math.min(minY, srcY, tgtY); maxY = Math.max(maxY, srcY, tgtY);
-    });
-    if (minY !== maxY) html += flowLineSvg(trunkX, minY, trunkX, maxY, false);
-  });
-  return html;
-}
-async function renderFlowTab() {
-  const ids = sortedProcessIds();
-  const el = document.getElementById('flow-diagram-wrap');
-  if (!ids.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Process</p>'; return; }
-
-  const missing = {};
-  ids.forEach((id, i) => { if (!allProcesses[id].flowPos) missing['processes/' + id + '/flowPos'] = { col: i % 6, row: Math.floor(i / 6) }; });
-  if (Object.keys(missing).length) { await update(ref(db), missing); return; }
-
-  const maxCol = Math.max(0, ...ids.map(id => allProcesses[id].flowPos.col));
-  const maxRow = Math.max(0, ...ids.map(id => allProcesses[id].flowPos.row));
-  const canvasW = (maxCol + 1) * FLOW_CELL_W + FLOW_MARGIN * 2;
-  const canvasH = (maxRow + 1) * FLOW_CELL_H + FLOW_MARGIN * 2;
-
-  const edgesHtml = buildFlowEdgesHtml(ids);
-  const boxesHtml = ids.map(id => {
-    const p = allProcesses[id];
-    const x = p.flowPos.col * FLOW_CELL_W + FLOW_MARGIN, y = p.flowPos.row * FLOW_CELL_H + FLOW_MARGIN;
-    return `<div class="flow-node ${flowNodeClass(p)}" data-pid="${id}" style="left:${x}px; top:${y}px; width:${FLOW_BOX_W}px; height:${FLOW_BOX_H}px;">${escapeHtml(p.processNo)} &middot; ${escapeHtml(p.processName)}</div>`;
-  }).join('');
-
-  el.innerHTML = `<div class="flow-canvas" style="width:${canvasW}px; height:${canvasH}px;">
-    <svg class="flow-svg-layer" width="${canvasW}" height="${canvasH}">
-      <defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#94A2AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-      ${edgesHtml}
-    </svg>
-    ${boxesHtml}
-  </div>`;
-  initFlowDrag();
-}
-function initFlowDrag() {
-  const canvas = document.querySelector('.flow-canvas');
-  if (!canvas) return;
-  canvas.querySelectorAll('.flow-node').forEach(node => {
-    let offsetX = 0, offsetY = 0, startCol = 0, startRow = 0, dragging = false;
-    node.addEventListener('pointerdown', (e) => {
-      dragging = true;
-      node.setPointerCapture(e.pointerId);
-      const rect = node.getBoundingClientRect();
-      offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
-      const pos = allProcesses[node.dataset.pid].flowPos;
-      startCol = pos.col; startRow = pos.row;
-      node.classList.add('dragging');
-    });
-    node.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const canvasRect = canvas.getBoundingClientRect();
-      node.style.left = (e.clientX - canvasRect.left - offsetX) + 'px';
-      node.style.top = (e.clientY - canvasRect.top - offsetY) + 'px';
-    });
-    node.addEventListener('pointerup', () => {
-      if (!dragging) return;
-      dragging = false;
-      node.classList.remove('dragging');
-      const newCol = Math.max(0, Math.round((parseFloat(node.style.left) - FLOW_MARGIN) / FLOW_CELL_W));
-      const newRow = Math.max(0, Math.round((parseFloat(node.style.top) - FLOW_MARGIN) / FLOW_CELL_H));
-      applyFlowMove(node.dataset.pid, newCol, newRow, startCol, startRow);
-    });
-  });
-}
-function applyFlowMove(pid, newCol, newRow, oldCol, oldRow) {
-  if (newCol === oldCol && newRow === oldRow) { renderFlowTab(); return; }
-  const occupantId = Object.keys(allProcesses).find(id => id !== pid && allProcesses[id].flowPos && allProcesses[id].flowPos.col === newCol && allProcesses[id].flowPos.row === newRow);
-  const updates = {};
-  updates['processes/' + pid + '/flowPos'] = { col: newCol, row: newRow };
-  if (occupantId) updates['processes/' + occupantId + '/flowPos'] = { col: oldCol, row: oldRow };
-  update(ref(db), updates);
-}
 
 window.promptUserName = promptUserName;
 window.switchTab = switchTab;
 window.closeModal = closeModal;
 window.openProcessModal = openProcessModal;
 window.renumberProcessesFromCurrentOrder = renumberProcessesFromCurrentOrder;
-window.toggleModalNext = toggleModalNext;
 window.addModalTool = addModalTool;
 window.removeModalTool = removeModalTool;
 window.updateModalTool = updateModalTool;
