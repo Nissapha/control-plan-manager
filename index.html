@@ -162,6 +162,7 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
         <button class="tab-btn active" id="tab-btn-overview" onclick="switchTab('overview')">Process Overview</button>
         <button class="tab-btn" id="tab-btn-fmea" onclick="switchTab('fmea')">FMEA</button>
         <button class="tab-btn" id="tab-btn-cp" onclick="switchTab('cp')">Control Plan</button>
+        <button class="tab-btn" id="tab-btn-action" onclick="switchTab('action')">Action Tracker</button>
       </div>
     </div>
   </div>
@@ -171,6 +172,7 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
 
   <!-- ===== TAB: PROCESS OVERVIEW ===== -->
   <div id="tab-overview">
+    <div class="panel" id="risk-dashboard-wrap"></div>
     <div class="row-between">
       <div>
         <div style="font-size:17px; font-weight:700; color:var(--navy);">Process Overview</div>
@@ -231,6 +233,12 @@ a.back-link{font-size:13px; color:var(--navy); cursor:pointer; text-decoration:n
     <div class="table-scroll" id="cp-table-wrap"><p class="empty-state">ยังไม่มี Characteristic</p></div>
   </div>
 
+  <!-- ===== TAB: ACTION TRACKER ===== -->
+  <div id="tab-action" class="hidden">
+    <div class="page-desc" style="margin:0 0 16px;">รวม Failure Mode ที่ Action Priority (AP) = H จากทุก Process ไว้ที่เดียว เพื่อติดตามการแก้ไขไม่ให้ตกหล่น</div>
+    <div class="table-scroll" id="action-tracker-wrap"><p class="empty-state">กำลังโหลด...</p></div>
+  </div>
+
 </div>
 
 <!-- ===== MODAL ===== -->
@@ -283,6 +291,8 @@ onValue(ref(db, 'processes'), snap => {
   renderProcessList();
   renderFmeaTable();
   renderCpTable();
+  renderActionTrackerTab();
+  renderRiskDashboard();
 });
 
 function sortedProcessIds() {
@@ -294,7 +304,7 @@ function processLabel(pid) { const p = allProcesses[pid]; return p ? (p.processN
 
 function switchTab(tab) {
   currentTab = tab;
-  ['overview','fmea','cp'].forEach(t => {
+  ['overview','fmea','cp','action'].forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
     document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
   });
@@ -357,6 +367,80 @@ function deleteProcess(pid) {
   if (!confirm('ลบ Process นี้พร้อม FMEA และ Control Plan ทั้งหมดที่อยู่ในนั้นเลยหรือไม่? ย้อนกลับไม่ได้')) return;
   remove(ref(db, 'processes/' + pid));
 }
+function duplicateProcess(pid) {
+  const src = allProcesses[pid];
+  const newName = prompt('ตั้งชื่อ Process ใหม่ (สำเนาจาก "' + src.processName + '" พร้อม FMEA และ Control Plan ทั้งหมด)', src.processName + ' (Copy)');
+  if (!newName || !newName.trim()) return;
+  promptUserName(false);
+  const newRef = push(ref(db, 'processes'));
+  const newProcess = {
+    processNo: String(sortedProcessIds().length + 1),
+    processName: newName.trim(),
+    tools: { ...(src.tools || {}) },
+    enteredBy: userName || 'ไม่ระบุชื่อ',
+    enteredAt: Date.now()
+  };
+  const newFmeaSubProcesses = {};
+  Object.values(src.fmeaSubProcesses || {}).forEach(sp => {
+    const newEffects = {};
+    Object.values(sp.effects || {}).forEach(fe => {
+      const newModes = {};
+      Object.values(fe.modes || {}).forEach(m => {
+        const { log, ...modeCopy } = m;
+        newModes[uid()] = { ...modeCopy, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() };
+      });
+      newEffects[uid()] = { feNo: fe.feNo, effect: fe.effect, severity: fe.severity, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), modes: newModes };
+    });
+    newFmeaSubProcesses[uid()] = { name: sp.name, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), effects: newEffects };
+  });
+  if (Object.keys(newFmeaSubProcesses).length) newProcess.fmeaSubProcesses = newFmeaSubProcesses;
+  const newChars = {};
+  Object.values(src.controlPlan?.chars || {}).forEach(c => {
+    const { log, updatedBy, updatedAt, ...charCopy } = c;
+    newChars[uid()] = { ...charCopy, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() };
+  });
+  if (Object.keys(newChars).length) newProcess.controlPlan = { chars: newChars };
+  set(newRef, newProcess).then(() => {
+    alert('คัดลอก "' + src.processName + '" เป็น "' + newName.trim() + '" เรียบร้อยแล้วครับ (ประวัติการแก้ไขเดิมไม่ได้ก็อปมาด้วย เริ่มนับใหม่)');
+  });
+}
+function computeRiskStats() {
+  let countH = 0, countM = 0, countL = 0, openActions = 0, inProgressActions = 0, noFmeaCount = 0, noCpCount = 0;
+  Object.keys(allProcesses).forEach(pid => {
+    const p = allProcesses[pid];
+    if (!fmeaModeCount(p)) noFmeaCount++;
+    if (!Object.keys(p.controlPlan?.chars || {}).length) noCpCount++;
+    Object.values(p.fmeaSubProcesses || {}).forEach(sp => {
+      Object.values(sp.effects || {}).forEach(fe => {
+        Object.values(fe.modes || {}).forEach(m => {
+          const ap = calcAP(fe.severity, m.occurrence, m.detection);
+          if (ap === 'H') { countH++; if ((m.status||'open') === 'open') openActions++; else if (m.status === 'inprogress') inProgressActions++; }
+          else if (ap === 'M') countM++;
+          else if (ap === 'L') countL++;
+        });
+      });
+    });
+  });
+  return { countH, countM, countL, openActions, inProgressActions, noFmeaCount, noCpCount };
+}
+function renderRiskDashboard() {
+  const el = document.getElementById('risk-dashboard-wrap');
+  if (!el) return;
+  const s = computeRiskStats();
+  const chip = (cls, label, onclick) => `<span class="badge ${cls}" style="font-size:13px; padding:7px 14px;${onclick?' cursor:pointer;':''}"${onclick?` onclick="${onclick}"`:''}>${label}</span>`;
+  el.innerHTML = `
+    <h2 style="margin:0 0 12px;">Risk Dashboard</h2>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      ${chip('badge-coral', 'AP สูง (H): ' + s.countH, "switchTab('fmea')")}
+      ${chip('badge-amber', 'AP กลาง (M): ' + s.countM, "switchTab('fmea')")}
+      ${chip('badge-teal', 'AP ต่ำ (L): ' + s.countL, "switchTab('fmea')")}
+      ${chip('badge-coral', 'รอดำเนินการ (Open): ' + s.openActions, "switchTab('action')")}
+      ${chip('badge-amber', 'กำลังทำ (In progress): ' + s.inProgressActions, "switchTab('action')")}
+      ${chip('badge-slate', 'Process ยังไม่มี FMEA: ' + s.noFmeaCount, "switchTab('overview')")}
+      ${chip('badge-slate', 'Process ยังไม่มี Control Plan: ' + s.noCpCount, "switchTab('overview')")}
+    </div>
+  `;
+}
 function toggleExpand(pid) { expandedProcesses[pid] = !expandedProcesses[pid]; renderProcessList(); }
 function renderProcessList() {
   const ids = sortedProcessIds();
@@ -408,7 +492,7 @@ function renderProcessList() {
         <th style="width:9%;">บันทึกคุณภาพ</th><th style="width:8%;">Owner</th><th style="width:10%;">Reaction</th>
       </tr>${charEntriesList.map(([cid,c]) => `<tr>
         <td class="no-cell"><a class="no-link" onclick="openCharModal('${id}','${cid}')">${escapeHtml(c.charNo)}</a></td>
-        <td>${nl2br(c.productChar)}</td><td>${nl2br(c.processChar)}</td><td>${nl2br(c.spec)}</td><td>${nl2br(c.document)}</td><td>${nl2br(c.evaluation)}</td>
+        <td>${nl2br(c.productChar)}${linkedModeBadgeHtml(c.linkedMode)}</td><td>${nl2br(c.processChar)}</td><td>${nl2br(c.spec)}</td><td>${nl2br(c.document)}</td><td>${nl2br(c.evaluation)}</td>
         <td>${escapeHtml(c.sampleSize)}</td><td>${escapeHtml(c.frequency)}</td><td>${nl2br(c.qualityRecord)}</td><td>${escapeHtml(c.owner)}</td><td>${nl2br(c.reaction)}</td>
       </tr>`).join('')}</table>` : '<p style="font-size:12px; color:var(--ink-faint); margin:0;">ยังไม่มี Characteristic</p>';
       expandHtml = `<div class="expand-area"><div class="section-bar bar-fmea">FMEA</div>${fmTable}<div class="section-bar bar-cp">Control Plan</div>${chTable}</div>`;
@@ -424,6 +508,7 @@ function renderProcessList() {
         <div style="display:flex; gap:6px;">
           <button class="btn btn-icon" onclick="toggleExpand('${id}')" title="แสดง/ซ่อนรายละเอียด">${expanded ? '\u25B2' : '\u25BC'}</button>
           <button class="btn btn-icon" onclick="openProcessModal('${id}')" title="แก้ไข">&#9998;</button>
+          <button class="btn btn-icon" onclick="duplicateProcess('${id}')" title="คัดลอก Process นี้ (พร้อม FMEA และ Control Plan)">&#128203;</button>
           <button class="btn btn-icon btn-danger" onclick="deleteProcess('${id}')" title="ลบ">&times;</button>
         </div>
       </div>
@@ -548,7 +633,7 @@ function apBadgeLabel(ap) { return ap === 'H' ? 'H (สูง)' : (ap === 'M' ? 
 
 const SP_LABELS = { name: 'Sub-Process' };
 const FE_LABELS = { effect:'Failure Effect (FE)', severity:'Severity (S)' };
-const MODE_LABELS = { failureMode:'Failure Mode (FM)', cause:'Failure Cause (FC)', prevention:'Prevention Control', occurrence:'Occurrence (O)', detectionControl:'Current Detection', detection:'Detection (D)' };
+const MODE_LABELS = { failureMode:'Failure Mode (FM)', cause:'Failure Cause (FC)', prevention:'Prevention Control', occurrence:'Occurrence (O)', detectionControl:'Current Detection', detection:'Detection (D)', recommendedAction:'Recommended Action', responsible:'Responsible', targetDate:'Target date', status:'Status' };
 
 function nextFeNoFor(pid, spId) {
   const effects = allProcesses[pid]?.fmeaSubProcesses?.[spId]?.effects || {};
@@ -769,6 +854,18 @@ function openModeModal(pid, spId, feId, modeId) {
       <div><label>Detection (D) 1-10</label><input type="number" id="mmo-detection" min="1" max="10" value="${m?escapeHtml(m.detection):''}" oninput="updateModeModalAp('${fe.severity}')"></div>
     </div>
     <div class="grid3"><div><label>AP &mdash; คำนวณอัตโนมัติ</label><div style="height:36px; display:flex; align-items:center;"><span class="badge badge-slate" id="mmo-ap-display">กรอก O, D ให้ครบก่อน</span></div></div></div>
+    <h3>การดำเนินการแก้ไข (Action Tracker)</h3>
+    <div class="grid2">
+      <div><label>Recommended Action</label><textarea id="mmo-recommendedaction">${m?escapeHtml(m.recommendedAction):''}</textarea></div>
+      <div><label>Responsible</label><input type="text" id="mmo-responsible" value="${m?escapeHtml(m.responsible):''}"></div>
+    </div>
+    <div class="grid2">
+      <div><label>Target date</label><input type="date" id="mmo-targetdate" value="${m?escapeHtml(m.targetDate):''}"></div>
+      <div><label>Status</label><select id="mmo-status">
+        <option value="open" ${(!m||m.status==='open')?'selected':''}>Open</option>
+        <option value="inprogress" ${m?.status==='inprogress'?'selected':''}>In progress</option>
+        <option value="closed" ${m?.status==='closed'?'selected':''}>Closed</option></select></div>
+    </div>
     <div class="row-between" style="margin-top:8px; margin-bottom:0;">
       <a class="back-link" onclick="closeModal()">ยกเลิก</a>
       <button class="btn btn-primary" onclick="saveModeModal('${pid}','${spId}','${feId}','${modeId||''}')">${isEdit?'บันทึกการแก้ไข':'เพิ่ม Failure Mode'}</button>
@@ -793,7 +890,11 @@ function saveModeModal(pid, spId, feId, modeId) {
     prevention: document.getElementById('mmo-prevention').value.trim(),
     occurrence: document.getElementById('mmo-occurrence').value.trim(),
     detectionControl: document.getElementById('mmo-detectioncontrol').value.trim(),
-    detection: document.getElementById('mmo-detection').value.trim()
+    detection: document.getElementById('mmo-detection').value.trim(),
+    recommendedAction: document.getElementById('mmo-recommendedaction').value.trim(),
+    responsible: document.getElementById('mmo-responsible').value.trim(),
+    targetDate: document.getElementById('mmo-targetdate').value,
+    status: document.getElementById('mmo-status').value
   };
   const base = 'processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/' + feId + '/modes/';
   if (modeId) {
@@ -954,7 +1055,74 @@ function exportFmeaExcel() {
   XLSX.writeFile(wb, 'FMEA_' + partNo.replace(/[^a-zA-Z0-9-]/g,'_') + '.xlsx');
 }
 
+// ================= ACTION TRACKER (all AP=H failure modes across the plant) =================
+function flattenHighPriorityModes() {
+  const rows = [];
+  Object.keys(allProcesses).forEach(pid => {
+    const p = allProcesses[pid];
+    Object.entries(p.fmeaSubProcesses || {}).forEach(([spId, sp]) => {
+      Object.entries(sp.effects || {}).forEach(([feId, fe]) => {
+        Object.entries(fe.modes || {}).forEach(([modeId, m]) => {
+          const ap = calcAP(fe.severity, m.occurrence, m.detection);
+          if (ap === 'H') rows.push({ pid, spId, feId, modeId, sp, fe, m });
+        });
+      });
+    });
+  });
+  const statusRank = { open: 0, inprogress: 1, closed: 2 };
+  rows.sort((a,b) => (statusRank[a.m.status||'open'] - statusRank[b.m.status||'open']) || (activityTime(b.m) - activityTime(a.m)));
+  return rows;
+}
+function renderActionTrackerTab() {
+  const el = document.getElementById('action-tracker-wrap');
+  if (!el) return;
+  const rows = flattenHighPriorityModes();
+  if (!rows.length) { el.innerHTML = '<p class="empty-state">ยังไม่มี Failure Mode ที่ AP = H เลยครับ 🎉</p>'; return; }
+  const statusCls = s => s === 'closed' ? 'badge-teal' : (s === 'inprogress' ? 'badge-amber' : 'badge-coral');
+  const statusLabel = s => s === 'closed' ? 'Closed' : (s === 'inprogress' ? 'In progress' : 'Open');
+  el.innerHTML = `<table class="data-table"><tr>
+    <th style="width:10%;">Process</th><th style="width:9%;">Sub-Process</th><th style="width:13%;">Failure Mode</th>
+    <th style="width:9%;">Failure Effect</th><th style="width:16%;">Recommended Action</th><th style="width:9%;">Responsible</th>
+    <th style="width:8%;">Target date</th><th style="width:8%;">Status</th><th style="width:8%;"></th>
+  </tr>${rows.map(r => `<tr>
+    <td class="tint-a">${escapeHtml(processLabel(r.pid))}</td><td class="tint-b">${nl2br(r.sp.name)}</td><td class="tint-a">${nl2br(r.m.failureMode)}</td>
+    <td class="tint-b">FE${escapeHtml(r.fe.feNo)}: ${nl2br(r.fe.effect)}</td>
+    <td class="tint-a">${nl2br(r.m.recommendedAction)}</td><td class="tint-b">${escapeHtml(r.m.responsible)}</td>
+    <td class="tint-a">${escapeHtml(r.m.targetDate)}</td>
+    <td class="tint-b"><span class="badge ${statusCls(r.m.status)}">${statusLabel(r.m.status)}</span></td>
+    <td class="actions-cell tint-a"><button class="btn btn-icon" onclick="openModeModal('${r.pid}','${r.spId}','${r.feId}','${r.modeId}')" title="แก้ไข / อัปเดต">&#9998;</button></td>
+  </tr>`).join('')}</table>`;
+}
+
 // ================= CONTROL PLAN (global tab) =================
+function allFailureModesOptionsHtml(selectedKey) {
+  const opts = ['<option value="">-- ไม่เชื่อมโยง --</option>'];
+  sortedProcessIds().forEach(pid => {
+    const p = allProcesses[pid];
+    Object.entries(p.fmeaSubProcesses || {}).forEach(([spId, sp]) => {
+      Object.entries(sp.effects || {}).forEach(([feId, fe]) => {
+        Object.entries(fe.modes || {}).forEach(([modeId, m]) => {
+          const key = pid + '::' + spId + '::' + feId + '::' + modeId;
+          opts.push(`<option value="${key}" ${key===selectedKey?'selected':''}>${escapeHtml(p.processNo)} \u00b7 FE${escapeHtml(fe.feNo)} \u00b7 ${escapeHtml(m.failureMode)}</option>`);
+        });
+      });
+    });
+  });
+  return opts.join('');
+}
+function linkedModeInfo(key) {
+  if (!key) return null;
+  const [pid, spId, feId, modeId] = key.split('::');
+  const m = allProcesses[pid]?.fmeaSubProcesses?.[spId]?.effects?.[feId]?.modes?.[modeId];
+  const fe = allProcesses[pid]?.fmeaSubProcesses?.[spId]?.effects?.[feId];
+  if (!m || !fe) return { label: '(Failure Mode ถูกลบไปแล้ว)' };
+  return { label: 'FE' + fe.feNo + ' \u00b7 ' + m.failureMode };
+}
+function linkedModeBadgeHtml(key) {
+  const info = linkedModeInfo(key);
+  if (!info) return '';
+  return `<div style="margin-top:4px; font-size:10.5px; color:var(--navy);">&#128279; ${escapeHtml(info.label)}</div>`;
+}
 const CHAR_LABELS = {
   charNo:'Characteristic No.', productChar:'Product characteristic', processChar:'Process characteristic',
   spec:'Spec / Tolerance', document:'Document', evaluation:'Evaluation', sampleSize:'จำนวน',
@@ -977,7 +1145,7 @@ function nextCharNoFor(pid) {
   const nums = Object.values(chars).map(c => parseFloat(c.charNo) || 0);
   return (nums.length ? Math.max(...nums) : 0) + 1;
 }
-function blankChar(no) { return { key: uid(), charNo:String(no), productChar:'', processChar:'', spec:'', document:'', evaluation:'', sampleSize:'', frequency:'', qualityRecord:'', owner:'', reaction:'' }; }
+function blankChar(no) { return { key: uid(), charNo:String(no), productChar:'', processChar:'', spec:'', document:'', evaluation:'', sampleSize:'', frequency:'', qualityRecord:'', owner:'', reaction:'', linkedMode:'' }; }
 let modalCpChars = [];
 let modalCpPid = null;
 function openCharModal(pid, cid) {
@@ -1016,6 +1184,7 @@ function charFieldsHtml(c, prefix) {
     : `<div><label>${label}</label><input type="text" data-${prefix}-f="${key}" value="${escapeHtml(c[key])}"></div>`;
   return `
     <div class="grid3" style="margin-bottom:12px;"><div><label>Characteristic No.</label><input type="text" data-${prefix}-f="charNo" value="${escapeHtml(c.charNo)}" style="width:100px;"></div></div>
+    <div style="margin-bottom:12px;"><label>เชื่อมโยงกับ Failure Mode (FMEA)</label><select data-${prefix}-f="linkedMode">${allFailureModesOptionsHtml(c.linkedMode)}</select></div>
     <div class="grid2">${f('productChar','Product characteristic')}${f('processChar','Process characteristic')}</div>
     <div class="grid2">${f('spec','Spec / Tolerance')}${f('document','Document')}${f('evaluation','Evaluation')}</div>
     <div class="grid2">${f('sampleSize','จำนวน')}${f('frequency','ความถี่')}</div>
@@ -1026,7 +1195,7 @@ function saveCharEditModal(pid, cid) {
   promptUserName(false);
   const get = f => document.querySelector('[data-medit-f="' + f + '"]').value.trim();
   const old = allProcesses[pid].controlPlan.chars[cid];
-  const updated = { charNo:get('charNo'), productChar:get('productChar'), processChar:get('processChar'), spec:get('spec'), document:get('document'), evaluation:get('evaluation'), sampleSize:get('sampleSize'), frequency:get('frequency'), qualityRecord:get('qualityRecord'), owner:get('owner'), reaction:get('reaction') };
+  const updated = { charNo:get('charNo'), productChar:get('productChar'), processChar:get('processChar'), spec:get('spec'), document:get('document'), evaluation:get('evaluation'), sampleSize:get('sampleSize'), frequency:get('frequency'), qualityRecord:get('qualityRecord'), owner:get('owner'), reaction:get('reaction'), linkedMode:get('linkedMode') };
   const changes = diffFields(old, updated, CHAR_LABELS);
   updated.updatedBy = userName || 'ไม่ระบุชื่อ'; updated.updatedAt = Date.now();
   update(ref(db, 'processes/' + pid + '/controlPlan/chars/' + cid), updated).then(() => {
@@ -1043,6 +1212,7 @@ function renderModalCharCards() {
         ${modalCpChars.length > 1 ? `<button class="btn btn-sm btn-danger" onclick="removeModalCharCard('${c.key}')">ลบ</button>` : ''}
       </div>
       <div class="grid3" style="margin-bottom:12px;"><div><label>No.</label><input type="text" value="${escapeHtml(c.charNo)}" oninput="updateModalChar('${c.key}','charNo',this.value)" style="width:100px;"></div></div>
+      <div style="margin-bottom:12px;"><label>เชื่อมโยงกับ Failure Mode (FMEA)</label><select onchange="updateModalChar('${c.key}','linkedMode',this.value)">${allFailureModesOptionsHtml(c.linkedMode)}</select></div>
       <div class="grid2">
         <div><label>Product characteristic</label><textarea oninput="updateModalChar('${c.key}','productChar',this.value)">${escapeHtml(c.productChar)}</textarea></div>
         <div><label>Process characteristic</label><textarea oninput="updateModalChar('${c.key}','processChar',this.value)">${escapeHtml(c.processChar)}</textarea></div>
@@ -1075,7 +1245,7 @@ function saveCharModal() {
     updates['processes/' + pid + '/controlPlan/chars/' + c.key] = {
       charNo:c.charNo.trim(), productChar:c.productChar.trim(), processChar:c.processChar.trim(), spec:c.spec.trim(),
       document:c.document.trim(), evaluation:c.evaluation.trim(), sampleSize:c.sampleSize.trim(), frequency:c.frequency.trim(),
-      qualityRecord:c.qualityRecord.trim(), owner:c.owner.trim(), reaction:c.reaction.trim(),
+      qualityRecord:c.qualityRecord.trim(), owner:c.owner.trim(), reaction:c.reaction.trim(), linkedMode: c.linkedMode || '',
       enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
     };
   });
@@ -1107,7 +1277,7 @@ function renderCpTable() {
     <th style="width:6%;">บันทึก</th><th style="width:10%;"></th>
   </tr>${rows.map((r,i) => `<tr>
     ${spanCount[i] ? `<td rowspan="${spanCount[i]}" style="background:var(--navy-soft);">${escapeHtml(processLabel(r.pid))}</td>` : ''}
-    <td class="tint-a">${escapeHtml(r.charNo)}</td><td class="tint-b">${nl2br(r.productChar)}</td><td class="tint-a">${nl2br(r.processChar)}</td>
+    <td class="tint-a">${escapeHtml(r.charNo)}</td><td class="tint-b">${nl2br(r.productChar)}${linkedModeBadgeHtml(r.linkedMode)}</td><td class="tint-a">${nl2br(r.processChar)}</td>
     <td class="tint-b">${nl2br(r.spec)}</td><td class="tint-a">${nl2br(r.document)}</td><td class="tint-b">${nl2br(r.evaluation)}</td><td class="tint-a">${escapeHtml(r.sampleSize)}</td>
     <td class="tint-b">${escapeHtml(r.frequency)}</td><td class="tint-a">${nl2br(r.qualityRecord)}</td><td class="tint-b">${escapeHtml(r.owner)}</td><td class="tint-a">${nl2br(r.reaction)}</td>
     <td class="tint-b" style="font-size:11px; color:var(--ink-faint);">${whoWhen(r)}</td>
@@ -1179,6 +1349,7 @@ window.removeModalTool = removeModalTool;
 window.updateModalTool = updateModalTool;
 window.saveProcessModal = saveProcessModal;
 window.deleteProcess = deleteProcess;
+window.duplicateProcess = duplicateProcess;
 window.toggleExpand = toggleExpand;
 window.openHistoryModal = openHistoryModal;
 window.deleteLogEntry = deleteLogEntry;
