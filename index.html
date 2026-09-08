@@ -110,7 +110,7 @@ table.data-table{width:100%; max-width:100%; border-collapse:collapse; font-size
 table.data-table th, table.data-table td{border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; word-break:break-word; overflow-wrap:break-word; line-height:1.4;}
 table.data-table th{background:#EEF3F7; color:var(--ink-soft); font-weight:600; position:sticky; top:0; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 table.data-table td{max-width:0; overflow:hidden;}
-table.data-table td.actions-cell{max-width:none; overflow:visible; white-space:nowrap; text-align:right;}
+table.data-table td.actions-cell{max-width:none; overflow:visible; text-align:right; display:flex; flex-wrap:wrap; justify-content:flex-end; align-content:flex-start; gap:2px;}
 table.data-table .btn-icon{padding:2px 5px; font-size:12px;}
 table.mini-table{width:100%; max-width:100%; border-collapse:collapse; font-size:11px; margin-bottom:4px; table-layout:fixed;}
 table.mini-table th, table.mini-table td{border:1px solid var(--line); padding:5px 7px; text-align:left; word-break:break-word; overflow-wrap:break-word; line-height:1.35;}
@@ -1105,7 +1105,7 @@ function renderFmeaTable() {
     spEntries.forEach(({ spId, sp, feEntries, spRowCount }) => {
       const spCellHtml = `<td rowspan="${spRowCount}" style="background:var(--navy);color:#fff;">
           <div>${nl2br(sp.name)}</div>
-          <div style="margin-top:6px; display:flex; gap:2px;">
+          <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:2px;">
             <button class="btn btn-icon" onclick="moveSubProcess('${pid}','${spId}','up')" title="ขยับขึ้น">&#9650;</button>
             <button class="btn btn-icon" onclick="moveSubProcess('${pid}','${spId}','down')" title="ขยับลง">&#9660;</button>
             <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}','${escapeHtml(sp.name)}')" title="ประวัติ">&#128337;</button>
@@ -1127,7 +1127,7 @@ function renderFmeaTable() {
             <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">${escapeHtml(fe.feNo)}</td>
             <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">
               <a class="no-link" onclick="openFeModal('${pid}','${spId}','${feId}')">${nl2br(fe.effect)}</a>
-              <div style="margin-top:6px; display:flex; gap:2px;">
+              <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:2px;">
                 <button class="btn btn-icon" onclick="moveEffect('${pid}','${spId}','${feId}','up')" title="ขยับขึ้น">&#9650;</button>
                 <button class="btn btn-icon" onclick="moveEffect('${pid}','${spId}','${feId}','down')" title="ขยับลง">&#9660;</button>
                 <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}','FE${escapeHtml(fe.feNo)} ${escapeHtml(fe.effect)}')" title="ประวัติ Effect">&#128337;</button>
@@ -1153,7 +1153,7 @@ function renderFmeaTable() {
           processCellDone = true; spCellDone = true; feCellDone = true;
           const modeCell = `<td rowspan="${modeRowSpan}">
               <a class="no-link" onclick="openModeModal('${pid}','${spId}','${feId}','${modeId}')">${nl2br(m.failureMode)}</a>
-              <div style="margin-top:6px; display:flex; gap:2px;">
+              <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:2px;">
                 <button class="btn btn-icon" onclick="moveMode('${pid}','${spId}','${feId}','${modeId}','up')" title="ขยับขึ้น">&#9650;</button>
                 <button class="btn btn-icon" onclick="moveMode('${pid}','${spId}','${feId}','${modeId}','down')" title="ขยับลง">&#9660;</button>
                 <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}/modes/${modeId}','${escapeHtml(m.failureMode)}')" title="ประวัติ">&#128337;</button>
