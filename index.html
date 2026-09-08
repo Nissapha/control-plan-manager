@@ -270,6 +270,7 @@ function nl2br(str) { return escapeHtml(str).replace(/\n/g, '<br>'); }
 function formatTime(ts) { if (!ts) return '-'; const d = new Date(ts); return d.toLocaleDateString('th-TH') + ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}); }
 function whoWhen(o) { return o.updatedBy ? ('แก้ไขล่าสุดโดย ' + escapeHtml(o.updatedBy) + ' \u00b7 ' + formatTime(o.updatedAt)) : ('กรอกโดย ' + escapeHtml(o.enteredBy) + ' \u00b7 ' + formatTime(o.enteredAt)); }
 function activityTime(o) { return o.updatedAt || o.enteredAt || 0; }
+function orderOf(o) { return (typeof o.order === 'number') ? o.order : activityTime(o); }
 
 let userName = localStorage.getItem('cpUserName') || '';
 function promptUserName(force) {
@@ -381,22 +382,28 @@ function duplicateProcess(pid) {
     enteredAt: Date.now()
   };
   const newFmeaSubProcesses = {};
-  Object.values(src.fmeaSubProcesses || {}).forEach(sp => {
-    const newEffects = {};
-    Object.values(sp.effects || {}).forEach(fe => {
-      const newModes = {};
-      Object.values(fe.modes || {}).forEach(m => {
-        const newCauses = {};
-        Object.values(m.causes || {}).forEach(c => {
-          const { log, updatedBy, updatedAt, ...causeCopy } = c;
-          newCauses[uid()] = { ...causeCopy, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() };
-        });
-        newModes[uid()] = { failureMode: m.failureMode, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), causes: newCauses };
+  Object.values(src.fmeaSubProcesses || {})
+    .sort((a,b) => orderOf(a) - orderOf(b))
+    .forEach((sp, spIdx) => {
+      const newEffects = {};
+      Object.values(sp.effects || {}).forEach(fe => {
+        const newModes = {};
+        Object.values(fe.modes || {})
+          .sort((a,b) => orderOf(a) - orderOf(b))
+          .forEach((m, mIdx) => {
+            const newCauses = {};
+            Object.values(m.causes || {})
+              .sort((a,b) => orderOf(a) - orderOf(b))
+              .forEach((c, cIdx) => {
+                const { log, updatedBy, updatedAt, ...causeCopy } = c;
+                newCauses[uid()] = { ...causeCopy, order: Date.now() + cIdx, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() };
+              });
+            newModes[uid()] = { failureMode: m.failureMode, order: Date.now() + mIdx, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), causes: newCauses };
+          });
+        newEffects[uid()] = { feNo: fe.feNo, effect: fe.effect, severity: fe.severity, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), modes: newModes };
       });
-      newEffects[uid()] = { feNo: fe.feNo, effect: fe.effect, severity: fe.severity, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), modes: newModes };
+      newFmeaSubProcesses[uid()] = { name: sp.name, order: Date.now() + spIdx, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), effects: newEffects };
     });
-    newFmeaSubProcesses[uid()] = { name: sp.name, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), effects: newEffects };
-  });
   if (Object.keys(newFmeaSubProcesses).length) newProcess.fmeaSubProcesses = newFmeaSubProcesses;
   const newChars = {};
   Object.values(src.controlPlan?.chars || {}).forEach(c => {
@@ -464,20 +471,23 @@ function renderProcessList() {
     const expanded = !!expandedProcesses[id];
     let expandHtml = '';
     if (expanded) {
-      const spEntries = Object.entries(p.fmeaSubProcesses || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
+      const spEntries = Object.entries(p.fmeaSubProcesses || {}).sort((a,b) => orderOf(a[1]) - orderOf(b[1]));
       let fmTable = '';
       spEntries.forEach(([spId, sp]) => {
         const feEntries = Object.entries(sp.effects || {}).sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0));
-        if (!feEntries.length) return;
         fmTable += `<div class="sp-bar">Sub-Process: ${nl2br(sp.name)}</div>`;
+        if (!feEntries.length) {
+          fmTable += '<p style="font-size:12px; color:var(--ink-faint); margin:0 0 4px;">ยังไม่มี Failure Effect</p>';
+          return;
+        }
         feEntries.forEach(([feId, fe]) => {
-          const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
+          const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => orderOf(a[1]) - orderOf(b[1]));
           fmTable += `<div class="fe-bar">FE${escapeHtml(fe.feNo)}: ${nl2br(fe.effect)} (S=${escapeHtml(fe.severity)})</div>`;
           if (!modeEntries.length) {
             fmTable += '<p style="font-size:12px; color:var(--ink-faint); margin:0 0 4px;">ยังไม่มี Failure Mode</p>';
           } else {
             modeEntries.forEach(([modeId, m]) => {
-              const causeEntries = Object.entries(m.causes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
+              const causeEntries = Object.entries(m.causes || {}).sort((a,b) => orderOf(a[1]) - orderOf(b[1]));
               fmTable += `<p style="font-size:11.5px; margin:6px 0 2px;"><a class="no-link" onclick="openModeModal('${id}','${spId}','${feId}','${modeId}')">Mode: ${nl2br(m.failureMode)}</a></p>`;
               if (!causeEntries.length) {
                 fmTable += '<p style="font-size:11.5px; color:var(--ink-faint); margin:0 0 4px;">ยังไม่มี Failure Cause</p>';
@@ -699,7 +709,7 @@ function saveSpModal(pid, spId) {
     });
   } else {
     const newRef = push(ref(db, 'processes/' + pid + '/fmeaSubProcesses'));
-    set(newRef, { name, enteredBy: userName||'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(() => {
+    set(newRef, { name, order: Date.now(), enteredBy: userName||'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(() => {
       pushLog('processes/' + pid + '/fmeaSubProcesses/' + newRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
       closeModal();
     });
@@ -820,18 +830,19 @@ function saveFeModal(pid, spId, feId) {
   function createEffectUnder(finalSpId) {
     const feData = { feNo: String(nextFeNoFor(targetPid, finalSpId)), effect, severity, enteredBy: userName||'ไม่ระบุชื่อ', enteredAt: Date.now() };
     const modesObj = {};
-    modalFeModes.forEach(m => {
+    const baseOrder = Date.now();
+    modalFeModes.forEach((m, idx) => {
       if (!m.failureMode.trim()) return;
       const causesObj = {};
       if (m.cause.trim()) {
         causesObj[uid()] = {
           cause: m.cause.trim(), prevention: m.prevention.trim(),
           occurrence: (m.occurrence || '').toString().trim(), detectionControl: m.detectionControl.trim(),
-          detection: (m.detection || '').toString().trim(),
+          detection: (m.detection || '').toString().trim(), order: baseOrder + idx,
           enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
         };
       }
-      modesObj[m.key] = { failureMode: m.failureMode.trim(), enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), causes: causesObj };
+      modesObj[m.key] = { failureMode: m.failureMode.trim(), order: baseOrder + idx, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), causes: causesObj };
     });
     feData.modes = modesObj;
     const newFeRef = push(ref(db, 'processes/' + targetPid + '/fmeaSubProcesses/' + finalSpId + '/effects'));
@@ -846,7 +857,7 @@ function saveFeModal(pid, spId, feId) {
   const newSpName = document.getElementById('mfe-newsubprocess').value.trim();
   if (newSpName) {
     const newSpRef = push(ref(db, 'processes/' + targetPid + '/fmeaSubProcesses'));
-    set(newSpRef, { name: newSpName, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(() => {
+    set(newSpRef, { name: newSpName, order: Date.now(), enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now() }).then(() => {
       pushLog('processes/' + targetPid + '/fmeaSubProcesses/' + newSpRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
       createEffectUnder(newSpRef.key);
     });
@@ -913,17 +924,18 @@ function saveModeModal(pid, spId, feId, modeId) {
   } else {
     const causesObj = {};
     const cause = document.getElementById('mmo-cause').value.trim();
+    const newOrder = Date.now();
     if (cause) {
       causesObj[uid()] = {
         cause, prevention: document.getElementById('mmo-prevention').value.trim(),
         occurrence: document.getElementById('mmo-occurrence').value.trim(),
         detectionControl: document.getElementById('mmo-detectioncontrol').value.trim(),
-        detection: document.getElementById('mmo-detection').value.trim(),
+        detection: document.getElementById('mmo-detection').value.trim(), order: newOrder,
         enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now()
       };
     }
     const newRef = push(ref(db, base.slice(0, -1)));
-    set(newRef, { failureMode, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), causes: causesObj }).then(() => {
+    set(newRef, { failureMode, order: newOrder, enteredBy: userName || 'ไม่ระบุชื่อ', enteredAt: Date.now(), causes: causesObj }).then(() => {
       pushLog(base + newRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
       closeModal();
     });
@@ -1004,7 +1016,7 @@ function saveCauseModal(pid, spId, feId, modeId, causeId) {
       closeModal();
     });
   } else {
-    c.enteredBy = userName || 'ไม่ระบุชื่อ'; c.enteredAt = Date.now();
+    c.enteredBy = userName || 'ไม่ระบุชื่อ'; c.enteredAt = Date.now(); c.order = Date.now();
     const newRef = push(ref(db, base.slice(0, -1)));
     set(newRef, c).then(() => {
       pushLog(base + newRef.key + '/log', { action:'created', by:userName||'ไม่ระบุชื่อ', at:Date.now() });
@@ -1017,62 +1029,133 @@ function deleteCause(pid, spId, feId, modeId, causeId) {
   remove(ref(db, 'processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/' + feId + '/modes/' + modeId + '/causes/' + causeId));
 }
 
+// ---------- Move up/down (swap order/feNo with the adjacent sibling) ----------
+function moveSiblingByOrder(basePath, siblingsObj, currentId, direction) {
+  const ids = Object.keys(siblingsObj).sort((a,b) => orderOf(siblingsObj[a]) - orderOf(siblingsObj[b]));
+  const idx = ids.indexOf(currentId);
+  const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (targetIdx < 0 || targetIdx >= ids.length) return;
+  const targetId = ids[targetIdx];
+  const myOrder = orderOf(siblingsObj[currentId]);
+  const targetOrder = orderOf(siblingsObj[targetId]);
+  const updates = {};
+  updates[basePath + currentId + '/order'] = targetOrder;
+  updates[basePath + targetId + '/order'] = myOrder;
+  update(ref(db), updates);
+}
+function moveSubProcess(pid, spId, direction) {
+  moveSiblingByOrder('processes/' + pid + '/fmeaSubProcesses/', allProcesses[pid].fmeaSubProcesses, spId, direction);
+}
+function moveEffect(pid, spId, feId, direction) {
+  const fes = allProcesses[pid].fmeaSubProcesses[spId].effects;
+  const ids = Object.keys(fes).sort((a,b) => (parseFloat(fes[a].feNo)||0) - (parseFloat(fes[b].feNo)||0));
+  const idx = ids.indexOf(feId);
+  const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (targetIdx < 0 || targetIdx >= ids.length) return;
+  const targetId = ids[targetIdx];
+  const base = 'processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/';
+  const updates = {};
+  updates[base + feId + '/feNo'] = fes[targetId].feNo;
+  updates[base + targetId + '/feNo'] = fes[feId].feNo;
+  update(ref(db), updates);
+}
+function moveMode(pid, spId, feId, modeId, direction) {
+  moveSiblingByOrder('processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/' + feId + '/modes/', allProcesses[pid].fmeaSubProcesses[spId].effects[feId].modes, modeId, direction);
+}
+function moveCause(pid, spId, feId, modeId, causeId, direction) {
+  moveSiblingByOrder('processes/' + pid + '/fmeaSubProcesses/' + spId + '/effects/' + feId + '/modes/' + modeId + '/causes/', allProcesses[pid].fmeaSubProcesses[spId].effects[feId].modes[modeId].causes, causeId, direction);
+}
+
 // ---------- Master FMEA table: Process > Sub-Process > Failure Effect > Failure Mode > Failure Cause ----------
 function renderFmeaTable() {
   const ids = sortedProcessIds();
   const el = document.getElementById('fmea-table-wrap');
   const HEADER_COUNT = 14;
-  const CAUSE_COLS = 8; // FailureCause, Prevention, O, CurrentDetection, D, AP, บันทึก, actions
+  const SP_EMPTY_COLS = 12;   // FE#,Effect,S,Mode + 8 cause cols — shown when a Sub-Process has zero Effects
+  const FE_EMPTY_COLS = 9;    // Mode + 8 cause cols — shown when an Effect has zero Modes
+  const CAUSE_COLS = 8;       // FailureCause, Prevention, O, CurrentDetection, D, AP, บันทึก, actions
   let bodyHtml = '';
   let any = false;
   ids.forEach(pid => {
     const p = allProcesses[pid];
-    const spEntries = Object.entries(p.fmeaSubProcesses || {}).map(([spId, sp]) => {
-      const feEntries = Object.entries(sp.effects || {}).map(([feId, fe]) => {
-        const modeEntries = Object.entries(fe.modes || {}).map(([modeId, m]) => {
-          const causeEntries = Object.entries(m.causes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
-          const modeRowSpan = Math.max(causeEntries.length, 1);
-          return { modeId, m, causeEntries, modeRowSpan };
-        }).filter(x => true);
-        const feRowSpan = modeEntries.reduce((s,x) => s + x.modeRowSpan, 0);
-        return { feId, fe, modeEntries, feRowSpan };
-      }).filter(x => x.modeEntries.length);
-      const spRowCount = feEntries.reduce((s,x) => s + x.feRowSpan, 0);
-      return { spId, sp, feEntries, spRowCount };
-    }).filter(x => x.feEntries.length);
+    const spEntries = Object.entries(p.fmeaSubProcesses || {})
+      .sort((a,b) => orderOf(a[1]) - orderOf(b[1]))
+      .map(([spId, sp]) => {
+        const feEntries = Object.entries(sp.effects || {})
+          .sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0))
+          .map(([feId, fe]) => {
+            const modeEntries = Object.entries(fe.modes || {})
+              .sort((a,b) => orderOf(a[1]) - orderOf(b[1]))
+              .map(([modeId, m]) => {
+                const causeEntries = Object.entries(m.causes || {}).sort((a,b) => orderOf(a[1]) - orderOf(b[1]));
+                const modeRowSpan = Math.max(causeEntries.length, 1);
+                return { modeId, m, causeEntries, modeRowSpan };
+              });
+            const feRowSpan = Math.max(modeEntries.reduce((s,x) => s + x.modeRowSpan, 0), 1);
+            return { feId, fe, modeEntries, feRowSpan };
+          });
+        const spRowCount = Math.max(feEntries.reduce((s,x) => s + x.feRowSpan, 0), 1);
+        return { spId, sp, feEntries, spRowCount };
+      });
     const processRowCount = spEntries.reduce((s,x) => s + x.spRowCount, 0);
     if (!processRowCount) return;
     any = true;
     let processCellDone = false;
+
     spEntries.forEach(({ spId, sp, feEntries, spRowCount }) => {
+      const spCellHtml = `<td rowspan="${spRowCount}" style="background:var(--navy);color:#fff;">
+          <div>${nl2br(sp.name)}</div>
+          <div style="margin-top:6px; display:flex; gap:2px;">
+            <button class="btn btn-icon" onclick="moveSubProcess('${pid}','${spId}','up')" title="ขยับขึ้น">&#9650;</button>
+            <button class="btn btn-icon" onclick="moveSubProcess('${pid}','${spId}','down')" title="ขยับลง">&#9660;</button>
+            <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}','${escapeHtml(sp.name)}')" title="ประวัติ">&#128337;</button>
+            <button class="btn btn-icon" onclick="openFeModal('${pid}','${spId}')" title="เพิ่ม Failure Effect">&#10133;</button>
+            <button class="btn btn-icon btn-danger" onclick="deleteSubProcess('${pid}','${spId}')" title="ลบ Sub-Process">&times;</button>
+          </div>
+        </td>`;
       let spCellDone = false;
+
+      if (!feEntries.length) {
+        const processCell = !processCellDone ? `<td rowspan="${processRowCount}">${escapeHtml(processLabel(pid))}</td>` : '';
+        processCellDone = true;
+        bodyHtml += `<tr>${processCell}${spCellHtml}<td colspan="${SP_EMPTY_COLS}" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Effect</td></tr>`;
+        return;
+      }
+
       feEntries.forEach(({ feId, fe, modeEntries, feRowSpan }) => {
+        const feCellHtml = `
+            <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">${escapeHtml(fe.feNo)}</td>
+            <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">
+              <a class="no-link" onclick="openFeModal('${pid}','${spId}','${feId}')">${nl2br(fe.effect)}</a>
+              <div style="margin-top:6px; display:flex; gap:2px;">
+                <button class="btn btn-icon" onclick="moveEffect('${pid}','${spId}','${feId}','up')" title="ขยับขึ้น">&#9650;</button>
+                <button class="btn btn-icon" onclick="moveEffect('${pid}','${spId}','${feId}','down')" title="ขยับลง">&#9660;</button>
+                <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}','FE${escapeHtml(fe.feNo)} ${escapeHtml(fe.effect)}')" title="ประวัติ Effect">&#128337;</button>
+                <button class="btn btn-icon" onclick="openModeModal('${pid}','${spId}','${feId}')" title="เพิ่ม Failure Mode">&#10133;</button>
+                <button class="btn btn-icon btn-danger" onclick="deleteFailureEffect('${pid}','${spId}','${feId}')" title="ลบ Effect">&times;</button>
+              </div>
+            </td>
+            <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">${escapeHtml(fe.severity)}</td>`;
         let feCellDone = false;
+
+        if (!modeEntries.length) {
+          const processCell = !processCellDone ? `<td rowspan="${processRowCount}">${escapeHtml(processLabel(pid))}</td>` : '';
+          const spCell = !spCellDone ? spCellHtml : '';
+          processCellDone = true; spCellDone = true;
+          bodyHtml += `<tr>${processCell}${spCell}${feCellHtml}<td colspan="${FE_EMPTY_COLS}" style="color:var(--ink-faint); font-style:italic;">ยังไม่มี Failure Mode</td></tr>`;
+          return;
+        }
+
         modeEntries.forEach(({ modeId, m, causeEntries, modeRowSpan }) => {
           const processCell = !processCellDone ? `<td rowspan="${processRowCount}">${escapeHtml(processLabel(pid))}</td>` : '';
-          const spCell = !spCellDone ? `<td rowspan="${spRowCount}" style="background:var(--navy);color:#fff;">
-              <div>${nl2br(sp.name)}</div>
-              <div style="margin-top:6px; display:flex; gap:2px;">
-                <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}','${escapeHtml(sp.name)}')" title="ประวัติ">&#128337;</button>
-                <button class="btn btn-icon" onclick="openFeModal('${pid}','${spId}')" title="เพิ่ม Failure Effect">&#10133;</button>
-                <button class="btn btn-icon btn-danger" onclick="deleteSubProcess('${pid}','${spId}')" title="ลบ Sub-Process">&times;</button>
-              </div>
-            </td>` : '';
-          const feCell = !feCellDone ? `
-              <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">${escapeHtml(fe.feNo)}</td>
-              <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">
-                <a class="no-link" onclick="openFeModal('${pid}','${spId}','${feId}')">${nl2br(fe.effect)}</a>
-                <div style="margin-top:6px; display:flex; gap:2px;">
-                  <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}','FE${escapeHtml(fe.feNo)} ${escapeHtml(fe.effect)}')" title="ประวัติ Effect">&#128337;</button>
-                  <button class="btn btn-icon" onclick="openModeModal('${pid}','${spId}','${feId}')" title="เพิ่ม Failure Mode">&#10133;</button>
-                  <button class="btn btn-icon btn-danger" onclick="deleteFailureEffect('${pid}','${spId}','${feId}')" title="ลบ Effect">&times;</button>
-                </div>
-              </td>
-              <td rowspan="${feRowSpan}" style="background:var(--navy-soft);">${escapeHtml(fe.severity)}</td>` : '';
+          const spCell = !spCellDone ? spCellHtml : '';
+          const feCell = !feCellDone ? feCellHtml : '';
           processCellDone = true; spCellDone = true; feCellDone = true;
           const modeCell = `<td rowspan="${modeRowSpan}">
               <a class="no-link" onclick="openModeModal('${pid}','${spId}','${feId}','${modeId}')">${nl2br(m.failureMode)}</a>
               <div style="margin-top:6px; display:flex; gap:2px;">
+                <button class="btn btn-icon" onclick="moveMode('${pid}','${spId}','${feId}','${modeId}','up')" title="ขยับขึ้น">&#9650;</button>
+                <button class="btn btn-icon" onclick="moveMode('${pid}','${spId}','${feId}','${modeId}','down')" title="ขยับลง">&#9660;</button>
                 <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}/modes/${modeId}','${escapeHtml(m.failureMode)}')" title="ประวัติ">&#128337;</button>
                 <button class="btn btn-icon" onclick="openCauseModal('${pid}','${spId}','${feId}','${modeId}')" title="เพิ่ม Failure Cause">&#10133;</button>
                 <button class="btn btn-icon btn-danger" onclick="deleteFmMode('${pid}','${spId}','${feId}','${modeId}')" title="ลบ Mode">&times;</button>
@@ -1089,6 +1172,8 @@ function renderFmeaTable() {
                 <td class="tint-b"><span class="badge ${apBadgeCls(ap)}">${escapeHtml(ap)}</span></td>
                 <td class="tint-a" style="font-size:11px; color:var(--ink-faint);">${whoWhen(c)}</td>
                 <td class="actions-cell tint-b">
+                  <button class="btn btn-icon" onclick="moveCause('${pid}','${spId}','${feId}','${modeId}','${causeId}','up')" title="ขยับขึ้น">&#9650;</button>
+                  <button class="btn btn-icon" onclick="moveCause('${pid}','${spId}','${feId}','${modeId}','${causeId}','down')" title="ขยับลง">&#9660;</button>
                   <button class="btn btn-icon" onclick="openHistoryModal('processes/${pid}/fmeaSubProcesses/${spId}/effects/${feId}/modes/${modeId}/causes/${causeId}','${escapeHtml(c.cause)}')" title="ประวัติ">&#128337;</button>
                   <button class="btn btn-icon" onclick="openCauseModal('${pid}','${spId}','${feId}','${modeId}','${causeId}')" title="แก้ไข">&#9998;</button>
                   <button class="btn btn-icon btn-danger" onclick="deleteCause('${pid}','${spId}','${feId}','${modeId}','${causeId}')" title="ลบ">&times;</button>
@@ -1132,33 +1217,42 @@ function exportFmeaExcel() {
   const bodyMerges = []; let r = 1;
   checked.forEach(pid => {
     const p = allProcesses[pid];
-    const spEntries = Object.entries(p.fmeaSubProcesses || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
+    const spEntries = Object.entries(p.fmeaSubProcesses || {}).sort((a,b) => orderOf(a[1]) - orderOf(b[1]));
     const processStartRow = r;
     spEntries.forEach(([spId, sp]) => {
       const feEntries = Object.entries(sp.effects || {}).sort((a,b) => (parseFloat(a[1].feNo)||0) - (parseFloat(b[1].feNo)||0));
-      if (!feEntries.length) return;
       const spStartRow = r;
-      feEntries.forEach(([feId, fe]) => {
-        const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
-        const feStartRow = r;
-        modeEntries.forEach(([modeId, m]) => {
-          const causeEntries = Object.entries(m.causes || {}).sort((a,b) => activityTime(a[1]) - activityTime(b[1]));
-          const modeStartRow = r;
-          if (!causeEntries.length) {
-            wsData.push(['', '', '', '', m.failureMode, '', '', '', '', '', '']);
+      if (!feEntries.length) {
+        wsData.push(['', sp.name, '', '', '', '', '', '', '', '', '']);
+        r += 1;
+      } else {
+        feEntries.forEach(([feId, fe]) => {
+          const modeEntries = Object.entries(fe.modes || {}).sort((a,b) => orderOf(a[1]) - orderOf(b[1]));
+          const feStartRow = r;
+          if (!modeEntries.length) {
+            wsData.push(['', '', fe.effect, fe.severity, '', '', '', '', '', '', '']);
             r += 1;
           } else {
-            causeEntries.forEach(([causeId, c], i) => {
-              const ap = calcAP(fe.severity, c.occurrence, c.detection);
-              wsData.push(['', '', '', '', i===0?m.failureMode:'', c.cause, c.prevention, c.occurrence, c.detectionControl, c.detection, ap]);
-              r += 1;
+            modeEntries.forEach(([modeId, m]) => {
+              const causeEntries = Object.entries(m.causes || {}).sort((a,b) => orderOf(a[1]) - orderOf(b[1]));
+              const modeStartRow = r;
+              if (!causeEntries.length) {
+                wsData.push(['', '', '', '', m.failureMode, '', '', '', '', '', '']);
+                r += 1;
+              } else {
+                causeEntries.forEach(([causeId, c], i) => {
+                  const ap = calcAP(fe.severity, c.occurrence, c.detection);
+                  wsData.push(['', '', '', '', i===0?m.failureMode:'', c.cause, c.prevention, c.occurrence, c.detectionControl, c.detection, ap]);
+                  r += 1;
+                });
+              }
+              if (r - modeStartRow > 1) { bodyMerges.push({s:{r:modeStartRow,c:4},e:{r:r-1,c:4}}); }
             });
           }
-          if (r - modeStartRow > 1) { bodyMerges.push({s:{r:modeStartRow,c:4},e:{r:r-1,c:4}}); }
+          if (r - feStartRow > 1) { [2,3].forEach(col => bodyMerges.push({s:{r:feStartRow,c:col},e:{r:r-1,c:col}})); }
+          wsData[feStartRow][2] = fe.effect; wsData[feStartRow][3] = fe.severity;
         });
-        if (r - feStartRow > 1) { [2,3].forEach(col => bodyMerges.push({s:{r:feStartRow,c:col},e:{r:r-1,c:col}})); }
-        wsData[feStartRow][2] = fe.effect; wsData[feStartRow][3] = fe.severity;
-      });
+      }
       if (r - spStartRow > 1) { bodyMerges.push({s:{r:spStartRow,c:1},e:{r:r-1,c:1}}); }
       wsData[spStartRow][1] = sp.name;
     });
@@ -1495,6 +1589,10 @@ window.openCauseModal = openCauseModal;
 window.updateCauseModalAp = updateCauseModalAp;
 window.saveCauseModal = saveCauseModal;
 window.deleteCause = deleteCause;
+window.moveSubProcess = moveSubProcess;
+window.moveEffect = moveEffect;
+window.moveMode = moveMode;
+window.moveCause = moveCause;
 window.toggleFmeaExportPicker = toggleFmeaExportPicker;
 window.exportFmeaExcel = exportFmeaExcel;
 window.openCharModal = openCharModal;
